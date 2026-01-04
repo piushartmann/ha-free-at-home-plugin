@@ -1,0 +1,63 @@
+---
+name: "pre-release"
+
+on:
+  push:
+    branches:
+      - "main"
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  auto-release:
+    name: "Auto Release"
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Check version
+        id: check_version
+        run: |
+          LAST_VERSION=$(git tag --sort=-v:refname | head -n 1)
+          CURRENT_VERSION=$(jq -r '.version' free-at-home-metadata.json)
+          BETA_FLAG=$(jq -r '.beta' free-at-home-metadata.json)
+          if [ "$(printf '%s\n' "$LAST_VERSION" "$CURRENT_VERSION" | sort -V | head -n1)" != "$LAST_VERSION" ]; then
+            echo "New version detected: $CURRENT_VERSION"
+            echo "run=true" >> $GITHUB_OUTPUT
+            echo "beta=$BETA_FLAG" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "No new version. Exiting."
+            echo "run=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Exit if no new version
+        if: steps.check_version.outputs.run == 'false'
+        run: exit 0
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: "npm"
+      - run: npm ci
+      - run: npm run buildProd --if-present
+      - run: npm run pack --if-present
+      - run: bzip2 -z *.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: addon
+          path: "*.tar.bz2"
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: "${{ steps.check_version.outputs.beta == 'true' }}"
+          title: ${{ steps.check_version.outputs.beta == 'true' && format('Development Build {0}', steps.check_version.outputs.version) || format('Release {0}', steps.check_version.outputs.version) }}
+          files: |
+            *.tar.bz2

@@ -1,6 +1,6 @@
 {
     "name": "Home Assistant Addon",
-    "version": "0.0.37",
+    "version": "0.0.38",
     "id": "de.piushartmann.homeassistant",
     "license": "MIT",
     "description": {
