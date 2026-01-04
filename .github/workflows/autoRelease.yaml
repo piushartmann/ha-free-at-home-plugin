@@ -37,7 +37,13 @@ jobs:
             echo "No new version. Exiting."
             echo "run=false" >> $GITHUB_OUTPUT
           fi
-
+          
+      - name: Log run status
+        run: |
+          echo "Run status: $RUN_STATUS"
+        env:
+          RUN_STATUS: ${{ steps.check_version.outputs.run }}
+          
       - name: Use Node.js 18
         if: steps.check_version.outputs.run == 'true'
         uses: actions/setup-node@v3
