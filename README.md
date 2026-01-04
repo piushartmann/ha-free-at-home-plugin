@@ -34,6 +34,7 @@ After that your Home Assistant entities should slowly appear in your Free@Home s
 
 ### Updating
 If there is a new version of the Addon available on Github you can update it by downloading the latest release and uploading it to your SysAP like described in the installation section. Then you can just press the update button in the Addon settings to update it. Your configuration will be kept during the update.
+When updating it will seem like all your devices are slowly disappearing and reappearing. This is normal behavior during the update process and will take some time, but your configuration of the devices will be kept.
 
 ## Troubleshooting
 If you encounter issues with the Addon, you can download the log messages from the Addons settings page. Check the logs for any error messages that might indicate what went wrong. If you need further assistance, you can open an issue on the [GitHub repository](https://github.com/piushartmann/ha-free-at-home-plugin/issues). Be aware that there could potentially be private information like device names or your Home Assistant URL in the logs, so review them before sharing. (The Long-Lived Access Token is never logged.)
