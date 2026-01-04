@@ -1,5 +1,5 @@
 ---
-name: "pre-release"
+name: "Auto Release"
 
 on:
   push:
@@ -45,10 +45,15 @@ jobs:
           node-version: 18
           cache: "npm"
       - run: npm ci
+        if: steps.check_version.outputs.run == 'true'
       - run: npm run buildProd --if-present
+        if: steps.check_version.outputs.run == 'true'
       - run: npm run pack --if-present
+        if: steps.check_version.outputs.run == 'true'
       - run: bzip2 -z *.tar
+        if: steps.check_version.outputs.run == 'true'
       - uses: actions/upload-artifact@v4
+        if: steps.check_version.outputs.run == 'true'
         with:
           name: addon
           path: "*.tar.bz2"
