@@ -1,4 +1,4 @@
-Busch Jaeger Free@Home Home Assistant Add-on
+Home Assistant Addon for Busch Jaeger Free@Home
 ===
 
 This add-on for the Busch Jaeger SysAP integrates Home Assistant entities into the Free@Home ecosystem. So you can control your Home Assistant devices with the Free@Home smart home system and their smart light switches.
