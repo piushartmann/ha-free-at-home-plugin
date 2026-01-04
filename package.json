@@ -1,0 +1,34 @@
+{
+  "name": "ha-free-at-home-plugin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "node build/main.js",
+    "build": "tsc -p .",
+    "postbuild": "npm run validate",
+    "buildProd": "tsc  -p . --sourceMap false --declarationMap false",
+    "postbuildProd": "npm run postbuild",
+    "validate": "free-at-home-cli validate",
+    "prepack": "npm run buildProd",
+    "pack": "free-at-home-cli buildscriptarchive build",
+    "journal": "free-at-home-cli journal --filterAddon",
+    "monitorstate": "free-at-home-cli addonapplicationstate --clear",
+    "monitorconfig": "free-at-home-cli addonconfiguration --clear"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@busch-jaeger/free-at-home": "^0.33.2",
+    "@types/ws": "^8.18.1",
+    "home-assistant-js-websocket": "^9.6.0",
+    "ts-mixer": "5.4.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@busch-jaeger/free-at-home-cli": "^0.9.1",
+    "@tsconfig/node18": "^18.2.2",
+    "@types/node": "^18.15.3",
+    "typescript": "^5.2.2"
+  }
+}

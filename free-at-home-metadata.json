@@ -1,0 +1,91 @@
+{
+    "name": "Home Assistant Addon",
+    "version": "0.0.28",
+    "id": "de.piushartmann.homeassistant",
+    "license": "MIT",
+    "description": {
+        "en": "Integrates Busch-Jaeger Free@Home smart home devices with Home Assistant. Requires a Home Assistant instance with devices labeled for Free@Home integration.",
+        "de": "Integriert Busch-Jaeger Free@Home Smart-Home-Geräte in Home Assistant. Benötigt eine Home Assistant Instanz mit Geräten, die für die Free@Home Integration gekennzeichnet sind."
+    },
+    "url": "https://github.com/piushartmann/ha-free-at-home-plugin",
+    "supportUrl": "https://github.com/piushartmann/ha-free-at-home-plugin",
+    "author": "Pius Hartmann",
+    "type": "app",
+    "entryPoint": "build/main.js",
+    "beta": true,
+    "parameters": {
+        "authentication": {
+            "name": "Authentication",
+            "items": {
+                "authDescription": {
+                    "name": "Description",
+                    "name@de": "Beschreibung",
+                    "type": "description",
+                    "description": "To integrate Free@Home with Home Assistant, the addon needs access to your Home Assistant instance. Please provide the URL and a Long Lived Access Token from your Home Assistant user profile.",
+                    "description@de": "Um Free@Home mit Home Assistant zu integrieren, benötigt das Addon Zugriff auf deine Home Assistant Instanz. Bitte gib die URL und ein Langzeit-Zugriffstoken aus deinem Home Assistant Benutzerprofil an."
+                },
+                "hassUrl": {
+                    "name": "Home Assistant URL",
+                    "name@de": "Home Assistant URL",
+                    "type": "string",
+                    "default": "",
+                    "required": true,
+                    "description": "The URL of your Home Assistant instance, e.g., http://192.168.2.30:8123. Note: Dont use mDNS names like homeassistant.local.",
+                    "description@de": "Die URL deiner Home Assistant Instanz, z.B., http://192.168.2.30:8123. Hinweis: Verwende keine mDNS-Namen wie homeassistant.local."
+                },
+                "hassToken": {
+                    "name": "Long Lived Access Token",
+                    "name@de": "Langzeit-Zugriffstoken",
+                    "type": "password",
+                    "default": "",
+                    "required": true,
+                    "description": "A Long Lived Access Token from your Home Assistant user profile.",
+                    "description@de": "Ein Langzeit-Zugriffstoken aus deinem Home Assistant Benutzerprofil."
+                },
+                "hassConnectedState": {
+                    "name": "State: Connected",
+                    "name@de": "Status: Verbunden",
+                    "type": "text",
+                    "visible": false,
+                    "rpcCallOn": "everyChange",
+                    "rpc": "getParameterConfig",
+                    "rpcAdditionalParameters": {
+                        "type": "connectionState"
+                    }
+                }
+            }
+        },
+        "general": {
+            "name": "Addon Configuration",
+            "items": {
+                "labelDescription": {
+                    "name": "Description",
+                    "name@de": "Beschreibung",
+                    "type": "description",
+                    "description": "The addon uses labels in Home Assistant to identify which devices should be integrated into Free@Home. Add a Label in Home Assistant and specify the Label ID, and how often the addon should check for new devices with this label. The default label is the id for a Label named 'Busch Jaeger' in Home Assistant.",
+                    "description@de": "Das Addon verwendet Labels in Home Assistant, um zu identifizieren, welche Geräte in Free@Home integriert werden sollen. Füge ein Label in Home Assistant hinzu und gib die Label ID sowie an, wie oft das Addon nach neuen Geräten mit diesem Label suchen soll. Das Standard-Label ist die ID für ein Label namens 'Busch Jaeger' in Home Assistant."
+                },
+                "label": {
+                    "name": "Label",
+                    "name@de": "Label",
+                    "type": "string",
+                    "default": "busch_jaeger",
+                    "required": true,
+                    "description": "The label used to identify Home Assistant devices in Free@Home. Note use the label_id from Home Assistant not the Label name. (You can find all labels with the {{ labels() }} HA Template.)",
+                    "description@de": "Das Label, das verwendet wird, um Home Assistant Geräte in Free@Home zu identifizieren. Verwende die label_id aus Home Assistant und nicht den Label Namen. (Du kannst alle Labels mit der {{ labels() }} HA Vorlage finden.)"
+                },
+                "labelRefreshInterval": {
+                    "name": "Label Refresh Interval (in seconds)",
+                    "name@de": "Label Aktualisierungsintervall (in Sekunden)",
+                    "type": "number",
+                    "default": 60,
+                    "min": 10,
+                    "max": 3600,
+                    "required": true,
+                    "description": "Interval in seconds to refresh the device list from Home Assistant. This controls how often new devices with the label are added to Free@Home.",
+                    "description@de": "Intervall in Sekunden, um die Geräteliste von Home Assistant zu aktualisieren. Dies steuert, wie oft neue Geräte mit dem Label zu Free@Home hinzugefügt werden."
+                }
+            }
+        }
+    }
+}
