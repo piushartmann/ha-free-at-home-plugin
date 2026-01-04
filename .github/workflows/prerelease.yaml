@@ -34,3 +34,6 @@ jobs:
           title: "Development Build"
           files: |
             *.tar.bz2
+            
+permissions:
+  contents: write
