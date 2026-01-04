@@ -11,11 +11,9 @@ This add-on for the Busch Jaeger SysAP integrates Home Assistant entities into t
 - sensor (temperature only)
 - cover (not fully tested yet)
 
-## 🚨 Disclaimer 🚨
-
-I am not responsible for any Harm caused to your system. Use this Addon at your own Risk.
-
 ## How to Use
+This Addon is a personal experimental Project.
+Even though I haven't encountered any Problems during testing I strongly advice you to create and download a full Backup to another device, in case you have to reset the SysAP.
 
 ### Prerequisites
 - A Home Assistant instance running and accessible.
@@ -41,3 +39,9 @@ When updating it will seem like all your devices are slowly disappearing and rea
 
 ## Troubleshooting
 If you encounter issues with the add-on, you can download the log messages from the add-ons settings page. Check the logs for any error messages that might indicate what went wrong. If you need further assistance, you can open an issue on the [GitHub repository](https://github.com/piushartmann/ha-free-at-home-plugin/issues). Be aware that there could potentially be private information like device names or your Home Assistant URL in the logs, so review them before sharing. (The Long-Lived Access Token is never logged.)
+
+## 🚨 Disclaimer 🚨
+
+DISCLAIMER. THIS SOFTWARE IS PROVIDED 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT ARE DISCLAIMED. THIS SOFTWARE IS NOT INTENDED NOR AUTHORIZED FOR USE IN SYSTEMS OR APPLICATIONS WHERE FAILURE OF THE SOFTWARE MAY CAUSE PERSONAL INJURY OR DEATH.
+
+LIMITATION OF LIABILITY. IN NO EVENT WILL MYSELF BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. YOU AGREE TO INDEMNIFY AND HOLD MYSELF HARMLESS AGAINST ANY CLAIMS AND EXPENSES RESULTING FROM YOUR USE OR UNAUTHORIZED USE OF THE SOFTWARE.
