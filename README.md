@@ -14,8 +14,10 @@ This add-on for the Busch Jaeger SysAP integrates Home Assistant entities into t
 ## How to Use
 This Addon is a personal experimental project.
 Even though I haven't encountered any problems during testing I strongly advice you to create and download a full Backup to another device, in case you have to reset the SysAP.
+
 This Addon is only recommended to be used by experienced users.
-Before Installing the Addon read the [disclaimer](#disclaimer)
+
+Before installing the Addon read the [disclaimer](#disclaimer)
 
 ### Prerequisites
 - A Home Assistant instance running and accessible.
