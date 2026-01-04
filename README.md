@@ -27,7 +27,7 @@ This add-on for the Busch Jaeger SysAP integrates Home Assistant entities into t
 - `Label`: The add-on uses a Home Assistant label to identify which entities should be integrated into Free@Home. Create a new label in Home Assistant (e.g., `Busch Jaeger`) and paste its ID into the add-on's configuration. (The label ID is not the same as the name but lowercase and with underscores instead of spaces. You can see all label IDs in Home Assistant under Developer Tools -> Templates -> and paste `{{ labels() }}` into the template editor.)
 - `Label Refresh Interval`: This setting defines how often the add-on should refresh the list of entities from Home Assistant. The default is 60 seconds (1 minute).
 
-After inputting the correct values into the authentication group you should see a State: Connected message if the connection to Home Assistant was successful.
+After providing the correct values into the authentication group you should see a `State: Connected` message if the connection to Home Assistant was successful.
 Save the configuration to apply the settings and start the add-on.
 After that your Home Assistant entities should slowly appear in your Free@Home system. Be patient; depending on the number of entities it can take some time until all entities are created.
 
