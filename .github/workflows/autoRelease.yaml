@@ -19,12 +19,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Check version
         id: check_version
         run: |
           LAST_VERSION=$(git tag --sort=-v:refname | head -n 1)
           CURRENT_VERSION=$(jq -r '.version' free-at-home-metadata.json)
+          echo "Last version: $LAST_VERSION"
+          echo "Current version: $CURRENT_VERSION"
           BETA_FLAG=$(jq -r '.beta' free-at-home-metadata.json)
           if [ "$(printf '%s\n' "$LAST_VERSION" "$CURRENT_VERSION" | sort -V | head -n1)" != "$LAST_VERSION" ]; then
             echo "New version detected: $CURRENT_VERSION"
@@ -36,11 +38,8 @@ jobs:
             echo "run=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Exit if no new version
-        if: steps.check_version.outputs.run == 'false'
-        run: exit 0
-
       - name: Use Node.js 18
+        if: steps.check_version.outputs.run == 'true'
         uses: actions/setup-node@v3
         with:
           node-version: 18
@@ -54,6 +53,7 @@ jobs:
           name: addon
           path: "*.tar.bz2"
       - uses: "marvinpinto/action-automatic-releases@latest"
+        if: steps.check_version.outputs.run == 'true'
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: "latest"
