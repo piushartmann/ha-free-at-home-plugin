@@ -23,7 +23,7 @@ jobs:
       - name: Check version
         id: check_version
         run: |
-            LAST_VERSION=$(git tag --sort=-v:refname | head -n 1)
+            LAST_VERSION=$(git tag --sort=-v:refname | head -n 1 | xargs)
             CURRENT_VERSION=$(jq -r '.version' free-at-home-metadata.json)
             echo "Last version: $LAST_VERSION"
             echo "Current version: $CURRENT_VERSION"
