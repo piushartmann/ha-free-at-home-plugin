@@ -12,8 +12,10 @@ This add-on for the Busch Jaeger SysAP integrates Home Assistant entities into t
 - cover (not fully tested yet)
 
 ## How to Use
-This Addon is a personal experimental Project.
-Even though I haven't encountered any Problems during testing I strongly advice you to create and download a full Backup to another device, in case you have to reset the SysAP.
+This Addon is a personal experimental project.
+Even though I haven't encountered any problems during testing I strongly advice you to create and download a full Backup to another device, in case you have to reset the SysAP.
+This Addon is only recommended to be used by experienced users.
+Before Installing the Addon read the [disclaimer](#disclaimer)
 
 ### Prerequisites
 - A Home Assistant instance running and accessible.
@@ -40,7 +42,7 @@ When updating it will seem like all your devices are slowly disappearing and rea
 ## Troubleshooting
 If you encounter issues with the add-on, you can download the log messages from the add-ons settings page. Check the logs for any error messages that might indicate what went wrong. If you need further assistance, you can open an issue on the [GitHub repository](https://github.com/piushartmann/ha-free-at-home-plugin/issues). Be aware that there could potentially be private information like device names or your Home Assistant URL in the logs, so review them before sharing. (The Long-Lived Access Token is never logged.)
 
-## 🚨 Disclaimer 🚨
+## Disclaimer
 
 DISCLAIMER. THIS SOFTWARE IS PROVIDED 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT ARE DISCLAIMED. THIS SOFTWARE IS NOT INTENDED NOR AUTHORIZED FOR USE IN SYSTEMS OR APPLICATIONS WHERE FAILURE OF THE SOFTWARE MAY CAUSE PERSONAL INJURY OR DEATH.
 
