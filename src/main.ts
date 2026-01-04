@@ -6,7 +6,7 @@ import * as utils from './utils';
 import './rpc';
 import {
   EntityContext,
-  ManagedEntity,
+  supportedEntity,
   updateAllDeviceStates,
   updateDeviceState
 } from './entityHandlers';
@@ -20,7 +20,7 @@ freeAtHome.setEnableLogging(true);
 const metaData = AddOn.readMetaData();
 const addOn = new AddOn.AddOn(metaData.id);
 
-const fhManagedEntities: ManagedEntity[] = [];
+const fhManagedEntities: supportedEntity[] = [];
 let hassConnection: Connection;
 let refreshIntervalId: NodeJS.Timeout;
 let unsubscribeManagedEntityChanges: () => void;

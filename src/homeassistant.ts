@@ -10,11 +10,13 @@ import {
     HassEntity
 } from "home-assistant-js-websocket";
 
+import { supportedTypes } from "./entityHandlers.js";
+
 export interface Entity {
     id: string;
     name?: string;
-    type: "switch" | "light" | "dim_light" | "blinds" | "binary_input";
-    state: "on" | "off" | "unavailable" | "open" | "closed";
+    type: supportedTypes;
+    state: string;
     position?: number;
     brightness?: number;
 }
@@ -129,33 +131,45 @@ export async function refreshLabels(connection: Connection, label: string, refre
         // Determine the entity type from the entity ID prefix
         // Entity IDs follow the format: "domain.entity_name"
         const domain = entity.entity_id.split(".")[0];
-        let type: "switch" | "light" | "dim_light" | "blinds" | "binary_input" = "switch";
+        let type: supportedTypes = "on_off";
 
         switch (domain) {
             case "light":
                 if (entity.attributes?.brightness !== undefined)
                     type = "dim_light";
                 else
-                    type = "light";
+                    type = "on_off";
                 break;
             case "cover":
                 type = "blinds";
                 break;
-            case "binary_sensor":
-                type = "binary_input";
-                break;
             case "switch":
-                type = "switch";
+                type = "on_off";
                 break;
+            case "binary_sensor":
+                type = "binary_sensor";
+                break;
+            case "sensor":
+                switch (entity.attributes?.device_class) {
+                    case "temperature":
+                        type = "air_temperature";
+                        break;
+                    default:
+                        console.warn(`Unsupported sensor device_class: ${entity.attributes?.device_class} for entity ${entity.entity_id}, skipping.`);
+                        continue;
+                }
+                break;
+
             default:
-                type = "switch";
+                console.warn(`Unsupported entity domain: ${domain} for entity ${entity.entity_id}, skipping.`);
+                continue;
         }
 
         const managesEntity: Entity = {
             id: entity.entity_id,
             name: entity.attributes?.friendly_name,
             type: type,
-            state: entity.state as "on" | "off" | "unavailable",
+            state: entity.state,
             brightness: entity.attributes?.brightness as number | undefined,
             position: entity.attributes?.current_position as number | undefined,
         };
@@ -218,56 +232,5 @@ export async function subscribeManagedEntityChanges(
                 }
             }
         }
-    });
-}
-
-export async function updateBlindState(
-    connection: Connection,
-    entityId: string,
-    position: number
-): Promise<void> {
-    const serviceData = {
-        type: "call_service",
-        domain: "cover",
-        service: "set_cover_position",
-        target: {
-            entity_id: entityId
-        },
-        service_data: {
-            position: position
-        }
-    };
-    await connection.sendMessagePromise(serviceData).catch((err) => {
-        console.error("Error sending blind state update for", entityId, ":", err);
-    })
-}
-
-export async function updateLightState(
-    connection: Connection,
-    entityId: string,
-    state: "on" | "off",
-    brightness?: number,
-): Promise<void> {
-    const serviceDomain = entityId.split(".")[0];
-    const service = state === "on" ? "turn_on" : "turn_off";
-    let serviceData: any = {
-        type: "call_service",
-        domain: serviceDomain,
-        service: service,
-        target: {
-            entity_id: entityId
-        }
-    };
-
-    // Add brightness if provided
-    if (brightness !== undefined) {
-        serviceData.service_data = {
-            ...serviceData.service_data,
-            brightness: brightness
-        };
-    }
-
-    connection.sendMessagePromise(serviceData).catch((err) => {
-        console.error("Error sending blind state update for", entityId, ":", err);
     });
 }
