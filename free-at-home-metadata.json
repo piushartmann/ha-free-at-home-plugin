@@ -1,8 +1,8 @@
 {
     "name": "Home Assistant Addon",
-    "version": "0.0.42",
+    "version": "1.0.0",
     "id": "de.piushartmann.homeassistant",
-    "license": "MIT",
+    "license": "GPL-3.0",
     "description": {
         "en": "Integrates Busch-Jaeger Free@Home smart home devices with Home Assistant. Requires a Home Assistant instance with devices labeled for Free@Home integration.",
         "de": "Integriert Busch-Jaeger Free@Home Smart-Home-Geräte in Home Assistant. Benötigt eine Home Assistant Instanz mit Geräten, die für die Free@Home Integration gekennzeichnet sind."
@@ -12,7 +12,7 @@
     "author": "Pius Hartmann",
     "type": "app",
     "entryPoint": "build/main.js",
-    "beta": true,
+    "beta": false,
     "parameters": {
         "authentication": {
             "name": "Authentication",
