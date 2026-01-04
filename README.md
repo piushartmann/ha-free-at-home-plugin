@@ -11,6 +11,10 @@ This add-on for the Busch Jaeger SysAP integrates Home Assistant entities into t
 - sensor (temperature only)
 - cover (not fully tested yet)
 
+## 🚨 Disclaimer 🚨
+
+I am not responsible for any Harm caused to your system. Use this Addon at your own Risk.
+
 ## How to Use
 
 ### Prerequisites
@@ -37,6 +41,3 @@ When updating it will seem like all your devices are slowly disappearing and rea
 
 ## Troubleshooting
 If you encounter issues with the add-on, you can download the log messages from the add-ons settings page. Check the logs for any error messages that might indicate what went wrong. If you need further assistance, you can open an issue on the [GitHub repository](https://github.com/piushartmann/ha-free-at-home-plugin/issues). Be aware that there could potentially be private information like device names or your Home Assistant URL in the logs, so review them before sharing. (The Long-Lived Access Token is never logged.)
-
-## Development
-You can follow the documentation of Busch-Jaeger [here](https://busch-jaeger.github.io/free-at-home-addon-development-kit-documentation-preview/) to set up your environment for testing and debugging the add-on on a SysAP. I also found the docs in their [node-free-at-home](https://github.com/Busch-Jaeger/node-free-at-home) repository newer and more helpful than the ones in their dedicated documentation repository. But I have to say that the documentation in general is not that good and really old in some parts. I had to do some reverse engineering to figure out how some parts work.
