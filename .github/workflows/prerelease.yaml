@@ -22,7 +22,7 @@ jobs:
       - run: npm run buildProd --if-present
       - run: npm run pack --if-present
       - run: bzip2 -z *.tar
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: addon
           path: "*.tar.bz2"
