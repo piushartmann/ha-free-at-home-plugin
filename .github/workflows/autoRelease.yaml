@@ -57,11 +57,12 @@ jobs:
         with:
           name: addon
           path: "*.tar.bz2"
-      - uses: "marvinpinto/action-automatic-releases@latest"
+      - uses: "softprops/action-gh-release@v2"
+        name: "Create Automatic Release"
         if: steps.check_version.outputs.run == 'true'
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "v${{ steps.check_version.outputs.version }}"
-          prerelease: "${{ steps.check_version.outputs.beta == 'true' }}"
-          files: |
-            *.tar.bz2
+          files: "*.tar.bz2"
+          tag_name: "v${{ steps.check_version.outputs.version }}"
+          draft: false
+          prerelease: ${{ steps.check_version.outputs.beta }}
+          make_latest: ${{ !steps.check_version.outputs.beta }}
