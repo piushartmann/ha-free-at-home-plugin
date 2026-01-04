@@ -31,7 +31,7 @@ jobs:
             echo "Last version: $LAST_VERSION"
             echo "Current version: v$CURRENT_VERSION"
             BETA_FLAG=$(jq -r '.beta' free-at-home-metadata.json)
-            if [ -z "$LAST_VERSION" ] || [ "$(printf '%s\n' "$LAST_VERSION" "v$CURRENT_VERSION" | sort -V | head -n1)" != "$LAST_VERSION" ]; then
+            if [ -z "$LAST_VERSION" ] || [ "$(printf '%s\n' "$LAST_VERSION" "v$CURRENT_VERSION" | sort -V | tail -n1)" = "v$CURRENT_VERSION" ]; then
             echo "New version detected: v$CURRENT_VERSION"
             echo "run=true" >> $GITHUB_OUTPUT
             echo "beta=$BETA_FLAG" >> $GITHUB_OUTPUT
