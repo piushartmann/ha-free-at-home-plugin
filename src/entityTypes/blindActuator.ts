@@ -11,7 +11,7 @@ export default class BlindActuatorEntity implements ManagedEntity {
 
     async update(ctx: EntityContext, fhEntity: FreeAtHomeBlindActuatorChannel, haEntity: homeassistant.Entity): Promise<void> {
         console.log(`Setting BlindActuatorChannel position to ${haEntity.position}`);
-        fhEntity.position = haEntity.position !== undefined ? haEntity.position : 0;
+        fhEntity.position = haEntity.position !== undefined ? 100 - haEntity.position : 0;
     }
 
     async setCallbacks(ctx: EntityContext, fhEntity: FreeAtHomeBlindActuatorChannel, haEntity: homeassistant.Entity): Promise<void> {
@@ -30,10 +30,28 @@ export default class BlindActuatorEntity implements ManagedEntity {
                     position: value
                 }
             };
-            
+
             ctx.hassConnection.sendMessagePromise(serviceData).catch((err) => {
                 console.error("Error sending blind state update for", haEntity.id, ":", err);
             })
         });
+
+        fhEntity.on('stopMovement', async () => {
+            console.log(`Blinds ${haEntity.id} stop movement command received`);
+            console.time(`Update Home Assistant entity ${haEntity.id} stop movement`);
+            const serviceData = {
+                type: "call_service",
+                domain: "cover",
+                service: "stop_cover",
+                target: {
+                    entity_id: haEntity.id
+                }
+            };
+
+            ctx.hassConnection.sendMessagePromise(serviceData).catch((err) => {
+                console.error("Error sending blind stop command for", haEntity.id, ":", err);
+            });
+        });
+
     }
 }

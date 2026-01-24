@@ -50,8 +50,26 @@ export interface EntityContext {
 
 export interface ManagedEntity {
     type: supportedTypes;
+    /**
+     * Creates a new Free@Home entity based on the provided ID and name.
+     * @param ctx The entity context containing Free@Home and Home Assistant connection info.
+     * @param id The identifier for the entity.
+     * @param name The name of the entity.
+     */
     create(ctx: EntityContext, id: string, name: string): Promise<supportedEntity>;
+    /**
+     * Fetches the latest state from Home Assistant and updates the Free@Home entity accordingly.
+     * @param ctx  The entity context containing Free@Home and Home Assistant connection info.
+     * @param fhEntity The Free@Home managed entity to update.
+     * @param haEntity The Home Assistant entity providing the new state.
+     */
     update(ctx: EntityContext, fhEntity: supportedEntity, haEntity: homeassistant.Entity): Promise<void>;
+    /**
+     * Sets up callbacks on the Free@Home entity to handle state changes and propagate them to Home Assistant.
+     * @param ctx The entity context containing Free@Home and Home Assistant connection info.
+     * @param fhEntity The Free@Home managed entity to set callbacks on.
+     * @param haEntity The Home Assistant entity providing the new state.
+     */
     setCallbacks(ctx: EntityContext, fhEntity: supportedEntity, haEntity: homeassistant.Entity): void;
 }
 
