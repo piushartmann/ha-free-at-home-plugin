@@ -1,6 +1,6 @@
 {
     "name": "Home Assistant Addon",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "id": "de.piushartmann.homeassistant",
     "license": "GPL-3.0",
     "description": {
@@ -12,7 +12,7 @@
     "author": "Pius Hartmann",
     "type": "app",
     "entryPoint": "build/main.js",
-    "beta": false,
+    "beta": true,
     "parameters": {
         "authentication": {
             "name": "Authentication",

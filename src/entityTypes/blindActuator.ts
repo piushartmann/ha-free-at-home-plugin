@@ -11,7 +11,7 @@ export default class BlindActuatorEntity implements ManagedEntity {
 
     async update(ctx: EntityContext, fhEntity: FreeAtHomeBlindActuatorChannel, haEntity: homeassistant.Entity): Promise<void> {
         console.log(`Setting BlindActuatorChannel position to ${haEntity.position}`);
-        fhEntity.position = haEntity.position !== undefined ? 100 - haEntity.position : 0;
+        fhEntity.position = haEntity.position !== undefined ? haEntity.position : 0;
     }
 
     async setCallbacks(ctx: EntityContext, fhEntity: FreeAtHomeBlindActuatorChannel, haEntity: homeassistant.Entity): Promise<void> {
@@ -27,7 +27,7 @@ export default class BlindActuatorEntity implements ManagedEntity {
                     entity_id: haEntity.id
                 },
                 service_data: {
-                    position: value
+                    position: 100 - value
                 }
             };
 
@@ -49,7 +49,7 @@ export default class BlindActuatorEntity implements ManagedEntity {
             };
 
             ctx.hassConnection.sendMessagePromise(serviceData).catch((err) => {
-                console.error("Error sending blind stop command for", haEntity.id, ":", err);
+                console.warn("Error sending blind stop command for", haEntity.id, ":", err);
             });
         });
 
