@@ -34,16 +34,16 @@ export default class DimActuatorEntity implements ManagedEntity {
             console.log(`Dim light ${haEntity.id} brightness changed to ${value}`);
             console.time(`Update Home Assistant entity ${haEntity.id} brightness`);
 
-            const brightness = Math.max(0, Math.min(255, Math.round(value * 2.55)));
-
             const serviceDomain = haEntity.id.split(".")[0];
             let serviceData: any = {
                 type: "call_service",
                 domain: serviceDomain,
                 service: "turn_on",
-                brightness: brightness,
                 target: {
                     entity_id: haEntity.id
+                },
+                service_data: {
+                    brightness_pct: value,
                 }
             };
 
