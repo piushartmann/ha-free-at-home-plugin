@@ -1,19 +1,25 @@
-import { ManagedEntity, EntityContext, supportedTypes } from "../entityHandlers.js";
+import Entity from "../entity.js";
+import type { ConnectionContext } from "../utils.js";
+import type { HassEntity } from 'home-assistant-js-websocket';
 import { AirTemperatureChannel } from '@busch-jaeger/free-at-home';
-import * as homeassistant from "../homeassistant.js";
 
-export default class OnOffEntity implements ManagedEntity {
-    type: supportedTypes = "air_temperature";
+export default class AirTemperatureEntity extends Entity {
+    declare fhEntity: AirTemperatureChannel;
 
-    async create(ctx: EntityContext, id: string, name?: string): Promise<AirTemperatureChannel> {
-        return await ctx.freeAtHome.createAirQualityTemperatureDevice(id, name || id);
+    async createFH(ctx: ConnectionContext): Promise<void> {
+        this.fhEntity = await ctx.freeAtHome.createAirQualityTemperatureDevice(this.nativeId, this.name);
+
+        this.fhEntity.setAutoKeepAlive(true);
+        this.fhEntity.isAutoConfirm = true;
     }
 
-    async update(ctx: EntityContext, fhEntity: AirTemperatureChannel, haEntity: homeassistant.Entity): Promise<void> {
-        fhEntity.setTemperature(haEntity.state);
-    }
-
-    async setCallbacks(ctx: EntityContext, fhEntity: AirTemperatureChannel, haEntity: homeassistant.Entity): Promise<void> {
-        // Air temperature sensors are read-only; no callbacks to set
+    async update(hassEntity: HassEntity): Promise<void> {
+        const newState = hassEntity.state as "on" | "off" | "unavailable";
+        if (this.state !== newState) {
+            console.log(`Entity ${this.id} state changed from ${this.state} to ${newState}`);
+            this.state = newState;
+            
+            this.fhEntity.setTemperature(this.state);
+        }
     }
 }

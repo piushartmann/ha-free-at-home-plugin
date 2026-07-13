@@ -1,30 +1,29 @@
-import { ManagedEntity, EntityContext, supportedEntity, supportedTypes } from "../entityHandlers.js";
+import Entity from "../entity.js";
+import type { ConnectionContext } from "../utils.js";
+import type { HassEntity } from 'home-assistant-js-websocket';
 import { FreeAtHomeBlindActuatorChannel } from '@busch-jaeger/free-at-home';
-import * as homeassistant from "../homeassistant.js";
 
-export default class BlindActuatorEntity implements ManagedEntity {
-    type: supportedTypes = "blinds";
+export default class BlindActuatorEntity extends Entity {
+    declare fhEntity: FreeAtHomeBlindActuatorChannel;
+    position?: number;
 
-    async create(ctx: EntityContext, id: string, name?: string): Promise<FreeAtHomeBlindActuatorChannel> {
-        return await ctx.freeAtHome.createBlindDevice(id, name || id);
+    constructor(entity: HassEntity, ctx: ConnectionContext) {
+        super(entity, ctx);
+        this.position = entity.attributes?.current_position as number | undefined
     }
 
-    async update(ctx: EntityContext, fhEntity: FreeAtHomeBlindActuatorChannel, haEntity: homeassistant.Entity): Promise<void> {
-        console.log(`Setting BlindActuatorChannel position to ${haEntity.position}`);
-        fhEntity.position = haEntity.position !== undefined ? haEntity.position : 0;
-    }
-
-    async setCallbacks(ctx: EntityContext, fhEntity: FreeAtHomeBlindActuatorChannel, haEntity: homeassistant.Entity): Promise<void> {
-        fhEntity.on('relativeValueChanged', async (value: number) => {
-            console.log(`Blinds ${haEntity.id} position changed to ${value}`);
-            console.time(`Update Home Assistant entity ${haEntity.id} position`);
+    async createFH(ctx: ConnectionContext): Promise<void> {
+        this.fhEntity = await ctx.freeAtHome.createBlindDevice(this.nativeId, this.name);
+        this.fhEntity.on('relativeValueChanged', async (value: number) => {
+            console.log(`Blinds ${this.id} position changed to ${value}`);
+            console.time(`Update Home Assistant entity ${this.id} position`);
 
             const serviceData = {
                 type: "call_service",
                 domain: "cover",
                 service: "set_cover_position",
                 target: {
-                    entity_id: haEntity.id
+                    entity_id: this.id
                 },
                 service_data: {
                     position: 100 - value
@@ -32,26 +31,42 @@ export default class BlindActuatorEntity implements ManagedEntity {
             };
 
             ctx.hassConnection.sendMessagePromise(serviceData).catch((err) => {
-                console.error("Error sending blind state update for", haEntity.id, ":", err);
+                console.error("Error sending blind state update for", this.id, ":", err);
             })
         });
 
-        fhEntity.on('stopMovement', async () => {
-            console.log(`Blinds ${haEntity.id} stop movement command received`);
-            console.time(`Update Home Assistant entity ${haEntity.id} stop movement`);
+        this.fhEntity.on('stopMovement', async () => {
+            console.log(`Blinds ${this.id} stop movement command received`);
+            console.time(`Update Home Assistant entity ${this.id} stop movement`);
             const serviceData = {
                 type: "call_service",
                 domain: "cover",
                 service: "stop_cover",
                 target: {
-                    entity_id: haEntity.id
+                    entity_id: this.id
                 }
             };
 
             ctx.hassConnection.sendMessagePromise(serviceData).catch((err) => {
-                console.warn("Error sending blind stop command for", haEntity.id, ":", err);
+                console.warn("Error sending blind stop command for", this.id, ":", err);
             });
         });
 
+        this.fhEntity.setAutoKeepAlive(true);
+        this.fhEntity.isAutoConfirm = true;
+    }
+
+    async update(hassEntity: HassEntity): Promise<void> {
+        const newState = hassEntity.state as "on" | "off" | "unavailable";
+        const newPosition = hassEntity.attributes?.current_position as number | undefined;
+
+        if (this.state !== newState || this.position !== newPosition) {
+            console.log(`Entity ${this.id} state changed from ${this.state} to ${newState}`);
+            this.state = newState;
+            this.position = newPosition;
+
+            console.log(`Setting BlindActuatorChannel position to ${this.position}`);
+            this.fhEntity.position = this.position !== undefined ? this.position : 0;
+        }
     }
 }

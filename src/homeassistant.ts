@@ -10,16 +10,8 @@ import {
     HassEntity
 } from "home-assistant-js-websocket";
 
-import { supportedTypes } from "./entityHandlers.js";
-
-export interface Entity {
-    id: string;
-    name?: string;
-    type: supportedTypes;
-    state: string;
-    position?: number;
-    brightness?: number;
-}
+import Entity from "./entity.js";
+import { ConnectionContext } from "./utils.js";
 
 export async function checkCredentials(
     hassURL: string,
@@ -42,8 +34,7 @@ export { managedEntities };
 */
 export async function connect(
     hassURL: string,
-    hassToken: string,
-    hassVerifySsl: boolean = true
+    hassToken: string
 ): Promise<Connection> {
     if (!hassURL) {
         throw new Error("hassURL is required");
@@ -62,7 +53,7 @@ export async function connect(
 
     const connection = await createConnection({
         auth,
-        setupRetry: 5
+        setupRetry: 5,
     });
 
     // Surface connection lifecycle in logs to debug connection drops.
@@ -98,7 +89,7 @@ export async function getEntitiesByLabel(
         label_result.referenced_entities = label_result.referenced_entities || [];
         // Expand ids to full entities
         let states = await getStates(connection);
-        let result_entities = states.filter((entity) =>
+        let result_entities = states.filter((entity: HassEntity) =>
             label_result.referenced_entities.includes(entity.entity_id)
         );
         return result_entities;
@@ -116,73 +107,35 @@ export async function getEntitiesByLabel(
 /**
  * Refresh the list of managed entities based on the specified label.
  * This functions is called periodically to update the list of entities in case new entities have been added with the label. (default: 60s)
- * @param connection The Home Assistant connection.
+ * @param ctx The Home Assistant connection.
  * @param label The label id to filter entities by.
  */
-export async function refreshLabels(connection: Connection, label: string, refreshAllDevices?: () => Promise<void>): Promise<void> {
-    const entities: HassEntity[] = await getEntitiesByLabel(connection, label);
-
-    const old_managedEntities = [...managedEntities];
-    // Clear the managed entities list
-    managedEntities = [];
+export async function refreshLabels(ctx: ConnectionContext, label: string): Promise<void> {
+    const entities: HassEntity[] = await getEntitiesByLabel(ctx.hassConnection, label);
 
     // Subscribe to new entities
     for (const entity of entities) {
-        // Determine the entity type from the entity ID prefix
-        // Entity IDs follow the format: "domain.entity_name"
-        const domain = entity.entity_id.split(".")[0];
-        let type: supportedTypes = "on_off";
-
-        switch (domain) {
-            case "light":
-                if (entity.attributes?.brightness !== undefined)
-                    type = "dim_light";
-                else
-                    type = "on_off";
-                break;
-            case "cover":
-                type = "blinds";
-                break;
-            case "switch":
-                type = "on_off";
-                break;
-            case "binary_sensor":
-                type = "binary_sensor";
-                break;
-            case "sensor":
-                switch (entity.attributes?.device_class) {
-                    case "temperature":
-                        type = "air_temperature";
-                        break;
-                    default:
-                        console.warn(`Unsupported sensor device_class: ${entity.attributes?.device_class} for entity ${entity.entity_id}, skipping.`);
-                        continue;
-                }
-                break;
-
-            default:
-                console.warn(`Unsupported entity domain: ${domain} for entity ${entity.entity_id}, skipping.`);
-                continue;
+        if (managedEntities.some((e) => e.id === entity.entity_id)) {
+            continue;
         }
-
-        const managesEntity: Entity = {
-            id: entity.entity_id,
-            name: entity.attributes?.friendly_name,
-            type: type,
-            state: entity.state,
-            brightness: entity.attributes?.brightness as number | undefined,
-            position: entity.attributes?.current_position as number | undefined,
-        };
-        managedEntities.push(managesEntity);
+        const managedEntity = Entity.create(entity, ctx);
+        if (!managedEntity) {
+            continue;
+        }
+        managedEntities.push(managedEntity);
     }
 
-    // If the set of managed entities has changed, refresh all devices
-    const oldIds = old_managedEntities.map(e => e.id).sort();
-    const newIds = managedEntities.map(e => e.id).sort();
-    const setsAreEqual = oldIds.length === newIds.length && oldIds.every((value, index) => value === newIds[index]);
-    if (!setsAreEqual && refreshAllDevices) {
-        console.log("Managed entities have changed, refreshing all devices.");
-        await refreshAllDevices();
+    // Update existing entities (remove if no longer exists)
+    for (const managedEntity of managedEntities) {
+        const hassEntity = entities.find((e) => e.entity_id === managedEntity.id);
+        if (!hassEntity) {
+            console.warn(`Managed entity ${managedEntity.id} no longer exists in Home Assistant, removing from managed list.`);
+            managedEntities = managedEntities.filter((e) => e.id !== managedEntity.id);
+            continue;
+        }
+        managedEntity.update(hassEntity).catch((err) => {
+            console.error(`Error updating Home Assistant entity for ${managedEntity.id}:`, err);
+        });
     }
 }
 
@@ -194,8 +147,7 @@ export async function refreshLabels(connection: Connection, label: string, refre
  * @return An unsubscribe function to stop listening for changes.
  */
 export async function subscribeManagedEntityChanges(
-    connection: Connection,
-    callback: (entity: Entity) => void
+    connection: Connection
 ): Promise<() => void> {
     // Subscribe to all entity updates
     return subscribeEntities(connection, (hassEntities: HassEntities) => {
@@ -204,32 +156,9 @@ export async function subscribeManagedEntityChanges(
             const hassEntity = hassEntities[managedEntity.id];
 
             if (hassEntity) {
-                // Update the managed entity with the new state
-                const newState = hassEntity.state as "on" | "off" | "unavailable";
-
-                // Extract brightness if available
-                let brightness = hassEntity.attributes?.brightness as number | undefined;
-
-                if (!managedEntity.type) {
-                    console.error("Managed entity has no type, skipping:", managedEntity);
-                    continue;
-                }
-
-                // Check if any relevant state or attributes have changed
-                if (
-                    managedEntity.state !== newState ||
-                    managedEntity.brightness !== brightness
-                ) {
-                    console.log(`Entity ${managedEntity.id} state changed from ${managedEntity.state} to ${newState}`);
-                    console.log(`Brightness changed from ${managedEntity.brightness} to ${brightness}`);
-
-                    // Update the managed entity
-                    managedEntity.state = newState;
-                    managedEntity.brightness = brightness;
-
-                    console.log(`Calling callback for entity ${managedEntity.id}`);
-                    callback(managedEntity);
-                }
+                managedEntity.update(hassEntity).catch((err) => {
+                    console.error(`Error updating Home Assistant entity for ${managedEntity.id}:`, err);
+                });
             }
         }
     });

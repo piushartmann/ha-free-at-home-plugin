@@ -1,11 +1,12 @@
 import { FreeAtHome } from '@busch-jaeger/free-at-home';
+import { Connection } from 'home-assistant-js-websocket';
 import { Notification } from '@busch-jaeger/free-at-home/lib/fhapi';
 import { AddOn } from '@busch-jaeger/free-at-home';
+import { freeAtHome } from './main.js';
 
-let freeAtHome: FreeAtHome;
-
-export function init(instance: FreeAtHome) {
-    freeAtHome = instance;
+export interface ConnectionContext {
+    freeAtHome: FreeAtHome;
+    hassConnection: Connection;
 }
 
 export async function postNotification(

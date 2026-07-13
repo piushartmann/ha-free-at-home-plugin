@@ -1,50 +1,56 @@
-import { ManagedEntity, EntityContext, supportedTypes } from "../entityHandlers.js";
-import { FreeAtHomeDimActuatorChannel } from '@busch-jaeger/free-at-home';
-import * as homeassistant from "../homeassistant.js";
+import Entity from "../entity.js";
+import type { ConnectionContext } from "../utils.js";
+import type { HassEntity } from 'home-assistant-js-websocket';
+import type { FreeAtHomeDimActuatorChannel } from '@busch-jaeger/free-at-home';
 
-export default class DimActuatorEntity implements ManagedEntity {
-    type: supportedTypes = "dim_light";
+export default class DimActuatorEntity extends Entity {
+    declare fhEntity: FreeAtHomeDimActuatorChannel;
+    brightness?: number;
 
-    async create(ctx: EntityContext, id: string, name?: string): Promise<FreeAtHomeDimActuatorChannel> {
-        return await ctx.freeAtHome.createDimActuatorDevice(id, name || id);
+    constructor(entity: HassEntity, ctx: ConnectionContext) {
+        super(entity, ctx);
+        this.brightness = entity.attributes?.brightness as number | undefined
     }
 
-    async setCallbacks(ctx: EntityContext, fhEntity: FreeAtHomeDimActuatorChannel, haEntity: homeassistant.Entity): Promise<void> {
-        fhEntity.on('isOnChanged', (value: boolean) => {
-            console.log(`Dim light ${haEntity.id} changed to ${value}`);
-            console.time(`Update Home Assistant entity ${haEntity.id} state`);
+    async createFH(ctx: ConnectionContext): Promise<void> {
+        this.fhEntity = await ctx.freeAtHome.createDimActuatorDevice(this.nativeId, this.name);
+        this.fhEntity.on('isOnChanged', (value: boolean) => {
+            console.log(`Dim light ${this.id} changed to ${value}`);
+            console.time(`Update Home Assistant entity ${this.id} state`);
 
-            const serviceDomain = haEntity.id.split(".")[0];
+            this.state = value ? "on" : "off";
+
+            const serviceDomain = this.id.split(".")[0];
             const service = value ? "turn_on" : "turn_off";
             let serviceData: any = {
                 type: "call_service",
                 domain: serviceDomain,
                 service: service,
                 target: {
-                    entity_id: haEntity.id
+                    entity_id: this.id
                 }
             };
 
             ctx.hassConnection.sendMessagePromise(serviceData).catch((err) => {
-                console.error("Error sending blind state update for", haEntity.id, ":", err);
+                console.error("Error sending blind state update for", this.id, ":", err);
             });
         });
 
-        fhEntity.on('absoluteValueChanged', (value: number) => {
-            console.log(`Dim light ${haEntity.id} brightness changed to ${value}`);
-            console.time(`Update Home Assistant entity ${haEntity.id} brightness`);
+        this.fhEntity.on('absoluteValueChanged', (value: number) => {
+            console.log(`Dim light ${this.id} brightness changed to ${value}`);
+            console.time(`Update Home Assistant entity ${this.id} brightness`);
 
-            if (value == 1){
+            if (value == 1) {
                 value = 0;
             }
 
-            const serviceDomain = haEntity.id.split(".")[0];
+            const serviceDomain = this.id.split(".")[0];
             let serviceData: any = {
                 type: "call_service",
                 domain: serviceDomain,
                 service: "turn_on",
                 target: {
-                    entity_id: haEntity.id
+                    entity_id: this.id
                 },
                 service_data: {
                     brightness_pct: value,
@@ -52,16 +58,27 @@ export default class DimActuatorEntity implements ManagedEntity {
             };
 
             ctx.hassConnection.sendMessagePromise(serviceData).catch((err) => {
-                console.error("Error sending blind state update for", haEntity.id, ":", err);
+                console.error("Error sending dim state update for", this.id, ":", err);
             });
         });
+
+        this.fhEntity.setAutoKeepAlive(true);
+        this.fhEntity.isAutoConfirm = true;
     }
 
-    async update(ctx: EntityContext, fhEntity: FreeAtHomeDimActuatorChannel, haEntity: homeassistant.Entity): Promise<void> {
-        fhEntity.setOnOff(haEntity.state === 'on');
-        if (haEntity.brightness !== undefined) {
-            const brightnessPct = Math.max(0, Math.min(100, Math.round(haEntity.brightness / 2.55)));
-            fhEntity.setValue(brightnessPct);
+    async update(hassEntity: HassEntity): Promise<void> {
+        const newState = hassEntity.state as "on" | "off" | "unavailable";
+        const newBrightness = hassEntity.attributes?.brightness as number | undefined;
+        if (this.state !== newState || this.brightness !== newBrightness) {
+            console.log(`Entity ${this.id} state changed from ${this.state} to ${newState}, brightness changed from ${this.brightness} to ${newBrightness}`);
+            this.state = newState;
+            this.brightness = newBrightness;
+
+            this.fhEntity.setOnOff(this.state === 'on');
+            if (this.brightness !== undefined) {
+                const brightnessPct = Math.max(1, Math.min(100, Math.round(this.brightness / 2.55)));
+                this.fhEntity.setValue(brightnessPct);
+            }
         }
     }
 }

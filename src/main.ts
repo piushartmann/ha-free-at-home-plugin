@@ -2,33 +2,26 @@ import { FreeAtHome, AddOn } from '@busch-jaeger/free-at-home';
 import { Connection } from 'home-assistant-js-websocket';
 
 import * as homeassistant from './homeassistant';
+
 import * as utils from './utils';
 import './rpc';
-import {
-  EntityContext,
-  supportedEntity,
-  updateAllDeviceStates,
-  updateDeviceState
-} from './entityHandlers';
+import type { ConnectionContext } from './utils.js';
 
 
-const freeAtHome = new FreeAtHome();
-utils.init(freeAtHome);
+export const freeAtHome = new FreeAtHome();
 freeAtHome.activateSignalHandling();
 freeAtHome.setEnableLogging(true);
 
 const metaData = AddOn.readMetaData();
 const addOn = new AddOn.AddOn(metaData.id);
 
-const fhManagedEntities: supportedEntity[] = [];
 let hassConnection: Connection;
 let refreshIntervalId: NodeJS.Timeout;
 let unsubscribeManagedEntityChanges: () => void;
 
-const entityContext: EntityContext = {
+const connectionContext: ConnectionContext = {
   freeAtHome,
-  hassConnection: undefined as unknown as Connection,
-  fhManagedEntities
+  hassConnection: undefined as unknown as Connection
 };
 
 async function main(hassURL: string, hassToken: string, label: string = "bush_jaeger", labelRefreshInterval: number = 60) {
@@ -45,19 +38,19 @@ async function main(hassURL: string, hassToken: string, label: string = "bush_ja
 
   try {
     hassConnection = await homeassistant.connect(hassURL, hassToken);
-    entityContext.hassConnection = hassConnection;
+    connectionContext.hassConnection = hassConnection;
   }
   catch (err) {
     console.error("Error connecting to Home Assistant:", err);
     return;
   }
 
-  await homeassistant.refreshLabels(hassConnection, label, () => updateAllDeviceStates(entityContext)).catch((error) => {
+  await homeassistant.refreshLabels(connectionContext, label).catch((error) => {
     console.error("Error refreshing labels:", error);
   });
 
   refreshIntervalId = setInterval(async () => {
-    await homeassistant.refreshLabels(hassConnection, label, () => updateAllDeviceStates(entityContext)).catch((error) => {
+    await homeassistant.refreshLabels(connectionContext, label).catch((error) => {
       console.error("Error refreshing labels:", error);
     });
   }, labelRefreshInterval * 1000);
@@ -67,14 +60,7 @@ async function main(hassURL: string, hassToken: string, label: string = "bush_ja
     unsubscribeManagedEntityChanges();
   }
   console.log("Subscribing to managed entity changes");
-  unsubscribeManagedEntityChanges = await homeassistant.subscribeManagedEntityChanges(hassConnection, async (entity: homeassistant.Entity) => {
-    try {
-      await updateDeviceState(entityContext, entity);
-    }
-    catch (err) {
-      console.error("Error handling managed entity change:", entity, err);
-    }
-  });
+  unsubscribeManagedEntityChanges = await homeassistant.subscribeManagedEntityChanges(hassConnection);
 }
 
 // Catch unhandled promise rejections
@@ -100,8 +86,3 @@ addOn.on("configurationChanged", (configuration: utils.Configuration) => {
 });
 
 addOn.connectToConfiguration();
-
-
-export async function validateHassConnection(...args: any[]) {
-  console.log("validateHassConnection called with arguments:", args);
-}

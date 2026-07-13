@@ -10,11 +10,12 @@
     "buildProd": "tsc  -p . --sourceMap false --declarationMap false",
     "postbuildProd": "npm run postbuild",
     "validate": "free-at-home-cli validate",
+    "typecheck": "tsc -p . --noEmit",
     "prepack": "npm run buildProd",
     "pack": "free-at-home-cli buildscriptarchive build",
-    "journal": "free-at-home-cli journal --filterAddon",
-    "monitorstate": "free-at-home-cli addonapplicationstate --clear",
-    "monitorconfig": "free-at-home-cli addonconfiguration --clear"
+    "journal": ". ./.env && free-at-home-cli journal --filterAddon",
+    "monitorstate": ". ./.env && free-at-home-cli addonapplicationstate --clear",
+    "monitorconfig": ". ./.env && free-at-home-cli addonconfiguration --clear"
   },
   "author": "",
   "license": "ISC",
