@@ -1,7 +1,8 @@
 import { RPC } from "@busch-jaeger/free-at-home";
-import homeassistant from "./homeassistant.js";
 import { BasicParameter } from '@busch-jaeger/free-at-home/lib/addon/models/BasicParameter';
 import { Parameter } from '@busch-jaeger/free-at-home/lib/addon/models/Parameter';
+
+import homeassistant from "./homeassistant.js";
 
 const hassConnectedRpc = new RPC.RpcWebsocket("de.piushartmann.homeassistant");
 

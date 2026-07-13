@@ -6,12 +6,11 @@ import type { FreeAtHomeOnOffChannel } from '@busch-jaeger/free-at-home';
 export default class OnOffEntity extends Entity {
     declare fhEntity: FreeAtHomeOnOffChannel;
 
-    async createFH(ctx: ConnectionContext): Promise<void> {
+    async createFreeAtHomeEntities(ctx: ConnectionContext): Promise<void> {
         this.fhEntity = await ctx.freeAtHome.createSwitchingActuatorDevice(this.nativeId, this.name);
 
         this.fhEntity.on('isOnChanged', (value: boolean) => {
             console.log(`On/Off ${this.id} changed to ${value}`);
-            console.time(`Update Home Assistant entity ${this.id} state`);
 
             const serviceDomain = this.id.split(".")[0];
             const service = value ? "turn_on" : "turn_off";
@@ -28,17 +27,14 @@ export default class OnOffEntity extends Entity {
                 console.error("Error sending state update for", this.id, ":", err);
             });
         });
-
-        this.fhEntity.setAutoKeepAlive(true);
-        this.fhEntity.isAutoConfirm = true;
     }
 
-    async update(hassEntity: HassEntity): Promise<void> {
-        const newState = hassEntity.state as "on" | "off" | "unavailable";
-        if (this.state !== newState) {
-            console.log(`Entity ${this.id} state changed from ${this.state} to ${newState}`);
-            this.state = newState;
-            this.fhEntity.setOn(this.state === 'on');
-        }
+    stateChanged(hassEntity: HassEntity): boolean {
+        return this.state !== hassEntity.state;
+    }
+
+    updateFreeAtHomeEntities(hassEntity: HassEntity): void {
+        this.state = hassEntity.state;
+        this.fhEntity.setOn(this.state === 'on');
     }
 }

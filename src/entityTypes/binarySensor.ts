@@ -6,20 +6,17 @@ import { BinarySensorChannel } from '@busch-jaeger/free-at-home';
 export default class BinarySensorEntity extends Entity {
     declare fhEntity: BinarySensorChannel;
 
-    async createFH(ctx: ConnectionContext): Promise<void> {
+    async createFreeAtHomeEntities(ctx: ConnectionContext): Promise<void> {
         this.fhEntity = await ctx.freeAtHome.createBinarySensor(this.nativeId, this.name);
-
-        this.fhEntity.setAutoKeepAlive(true);
-        this.fhEntity.isAutoConfirm = true;
     }
 
-    async update(hassEntity: HassEntity): Promise<void> {
-        const newState = hassEntity.state as "on" | "off" | "unavailable";
-        if (this.state !== newState) {
-            console.log(`Entity ${this.id} state changed from ${this.state} to ${newState}`);
-            this.state = newState;
-            
-            this.fhEntity.setOnOff(this.state === 'on');
-        }
+    stateChanged(hassEntity: HassEntity): boolean {
+        return this.state !== hassEntity.state;
+    }
+
+    updateFreeAtHomeEntities(hassEntity: HassEntity): void {
+        this.state = hassEntity.state;
+
+        this.fhEntity.setOnOff(this.state === 'on');
     }
 }

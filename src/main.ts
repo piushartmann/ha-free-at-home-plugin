@@ -1,12 +1,9 @@
 import { FreeAtHome, AddOn } from '@busch-jaeger/free-at-home';
 import { Connection } from 'home-assistant-js-websocket';
 
-import homeassistant from './homeassistant';
-
-import * as utils from './utils';
 import './rpc';
-import type { ConnectionContext } from './utils.js';
-
+import homeassistant from './homeassistant';
+import type { ConnectionContext, Configuration } from './utils.js';
 
 export const freeAtHome = new FreeAtHome();
 freeAtHome.activateSignalHandling();
@@ -69,7 +66,7 @@ process.on('uncaughtException', (err) => {
 });
 
 // Listen for configuration changes
-addOn.on("configurationChanged", (configuration: utils.Configuration) => {
+addOn.on("configurationChanged", (configuration: Configuration) => {
     const hassUrl = configuration.authentication?.items?.["hassUrl"].trim() as string || "";
     const hassToken = configuration.authentication?.items?.["hassToken"].trim() as string || "";
     const label = configuration.general?.items?.["label"].trim() as string || "virtual_bush_jaeger";

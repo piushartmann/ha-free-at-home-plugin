@@ -1,7 +1,8 @@
 import { FreeAtHome } from '@busch-jaeger/free-at-home';
-import { Connection } from 'home-assistant-js-websocket';
 import { Notification } from '@busch-jaeger/free-at-home/lib/fhapi';
 import { AddOn } from '@busch-jaeger/free-at-home';
+import { Connection } from 'home-assistant-js-websocket';
+
 import { freeAtHome } from './main.js';
 
 export interface ConnectionContext {

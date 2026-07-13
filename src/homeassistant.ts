@@ -134,9 +134,7 @@ class HomeAssistant {
                 this.managedEntities = this.managedEntities.filter((e) => e.id !== managedEntity.id);
                 continue;
             }
-            managedEntity.update(hassEntity).catch((err) => {
-                console.error(`Error updating Home Assistant entity for ${managedEntity.id}:`, err);
-            });
+            managedEntity.update(hassEntity);
         }
     }
 
@@ -165,9 +163,7 @@ class HomeAssistant {
                 const hassEntity = hassEntities[managedEntity.id];
 
                 if (hassEntity) {
-                    managedEntity.update(hassEntity).catch((err) => {
-                        console.error(`Error updating Home Assistant entity for ${managedEntity.id}:`, err);
-                    });
+                    managedEntity.update(hassEntity);
                 }
             }
         });

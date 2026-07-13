@@ -12,12 +12,11 @@ export default class BlindActuatorEntity extends Entity {
         this.position = entity.attributes?.current_position as number | undefined
     }
 
-    async createFH(ctx: ConnectionContext): Promise<void> {
+    async createFreeAtHomeEntities(ctx: ConnectionContext): Promise<void> {
         this.fhEntity = await ctx.freeAtHome.createBlindDevice(this.nativeId, this.name);
         
         this.fhEntity.on('relativeValueChanged', async (value: number) => {
             console.log(`Blinds ${this.id} position changed to ${value}`);
-            console.time(`Update Home Assistant entity ${this.id} position`);
 
             const serviceData = {
                 type: "call_service",
@@ -52,22 +51,17 @@ export default class BlindActuatorEntity extends Entity {
                 console.warn("Error sending blind stop command for", this.id, ":", err);
             });
         });
-
-        this.fhEntity.setAutoKeepAlive(true);
-        this.fhEntity.isAutoConfirm = true;
     }
 
-    async update(hassEntity: HassEntity): Promise<void> {
-        const newState = hassEntity.state as "on" | "off" | "unavailable";
-        const newPosition = hassEntity.attributes?.current_position as number | undefined;
+    stateChanged(hassEntity: HassEntity): boolean {
+        return this.state !== hassEntity.state || this.position !== hassEntity.attributes?.current_position as number | undefined;
+    }
 
-        if (this.state !== newState || this.position !== newPosition) {
-            console.log(`Entity ${this.id} state changed from ${this.state} to ${newState}`);
-            this.state = newState;
-            this.position = newPosition;
+    updateFreeAtHomeEntities(hassEntity: HassEntity): void {
+            this.state = hassEntity.state;
+            this.position = hassEntity.attributes?.current_position as number | undefined;
 
             console.log(`Setting BlindActuatorChannel position to ${this.position}`);
             this.fhEntity.position = this.position !== undefined ? this.position : 0;
-        }
     }
 }

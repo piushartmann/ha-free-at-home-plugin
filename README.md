@@ -37,6 +37,13 @@ After providing the correct values into the authentication group you should see 
 Save the configuration to apply the settings and start the add-on.
 After that your Home Assistant entities should slowly appear in your Free@Home system. Be patient; depending on the number of entities it can take some time until all entities are created.
 
+To use the npm script you can make a .env file with the following content:
+```
+export FREEATHOME_BASE_URL='<your SysAP URL>'
+export FREEATHOME_API_USERNAME='<your SysAP username (usually "Installer")>'
+export FREEATHOME_API_PASSWORD='<your SysAP password>'
+```
+
 ### Updating
 If there is a new version of the add-on available on GitHub you can update it by downloading the latest release and uploading it to your SysAP like described in the installation section. Then you can just press the update button in the add-on settings to update it. Your configuration will be kept during the update.
 When updating it will seem like all your devices are slowly disappearing and reappearing. This is normal behavior during the update process and will take some time, but your configuration of the devices will be kept.
