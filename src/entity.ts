@@ -1,12 +1,7 @@
 import { HassEntity } from 'home-assistant-js-websocket';
 
-import OnOffEntity from './entityTypes/onOff';
-import DimActuatorEntity from './entityTypes/dimActuator';
-import BlindActuatorEntity from './entityTypes/blindActuator';
-import AirTemperatureEntity from './entityTypes/airTemperature';
-import BinarySensorEntity from './entityTypes/binarySensor';
-
 import { entityIdToNativeId, ConnectionContext } from './utils.js';
+import { Channel } from '@busch-jaeger/free-at-home/lib/fhapi/models/Channel.js';
 
 export default abstract class Entity {
     id: string;
@@ -16,6 +11,13 @@ export default abstract class Entity {
     protected fhEntity: any;
 
     static create(entity: HassEntity, ctx: ConnectionContext): Entity | undefined {
+        // Lazy load entity types to avoid circular dependencies
+        const OnOffEntity = require('./entityTypes/onOff.js').default;
+        const DimActuatorEntity = require('./entityTypes/dimActuator.js').default;
+        const BlindActuatorEntity = require('./entityTypes/blindActuator.js').default;
+        const AirTemperatureEntity = require('./entityTypes/airTemperature.js').default;
+        const BinarySensorEntity = require('./entityTypes/binarySensor.js').default;
+
         // Determine the entity type from the entity ID prefix
         // Entity IDs follow the format: "domain.entity_name"
         const domain = entity.entity_id.split('.')[0];

@@ -13,153 +13,165 @@ import {
 import Entity from "./entity.js";
 import { ConnectionContext } from "./utils.js";
 
-export async function checkCredentials(
-    hassURL: string,
-    hassToken: string): Promise<boolean> {
-    try {
-        const connection = await connect(hassURL, hassToken);
-        connection.close();
-        return true;
-    } catch (err) {
-        console.error("Error checking Home Assistant credentials:", err);
-        return false;
-    }
-}
+class HomeAssistant {
 
-var managedEntities: Entity[] = [];
-export { managedEntities };
+    connection: Connection = undefined as unknown as Connection;
+    private managedEntities: Entity[] = [];
+    private unsubscribeManagedEntityChanges: (() => void) | undefined = undefined;
 
-/**
-* Connects to the Home Assistant WebSocket API using a long-lived token.
-*/
-export async function connect(
-    hassURL: string,
-    hassToken: string
-): Promise<Connection> {
-    if (!hassURL) {
-        throw new Error("hassURL is required");
+    async testCredentials(url: string, token: string): Promise<boolean> {
+        try {
+            (await this.getConnection(url, token)).close();
+            return true;
+        } catch (err) {
+            console.error("Error checking Home Assistant credentials:", err);
+            return false;
+        }
     }
 
-    if (!hassToken) {
-        throw new Error("hassToken is required");
-    }
+    private async getConnection(url: string, token: string): Promise<Connection> {
+        if (!url) {
+            throw new Error("hassURL is required");
+        }
 
-    const normalizedUrl = hassURL.replace(/\/$/, "");
-    const auth: Auth = createLongLivedTokenAuth(normalizedUrl, hassToken);
+        if (!token) {
+            throw new Error("hassToken is required");
+        }
 
-    // Make ws available to the library so it can perform the auth handshake itself.
-    const wnd = globalThis as any;
-    wnd.WebSocket = wnd.WebSocket || WebSocket;
+        const normalizedUrl = url.replace(/\/$/, "");
+        const auth: Auth = createLongLivedTokenAuth(normalizedUrl, token);
 
-    const connection = await createConnection({
-        auth,
-        setupRetry: 5,
-    });
+        const wnd = globalThis as any;
+        wnd.WebSocket = wnd.WebSocket || WebSocket;
 
-    // Surface connection lifecycle in logs to debug connection drops.
-    connection.addEventListener?.("ready", () => {
-        console.log("Home Assistant connection ready.");
-    });
-    connection.addEventListener?.("disconnected", () => {
-        console.error("Home Assistant connection lost (disconnected event).");
-    });
-    connection.addEventListener?.("reconnect-error", (err: any) => {
-        console.error("Home Assistant reconnect error:", err);
-    });
-
-    return connection;
-}
-
-/**
- * @param connection The Home Assistant connection.
- * @param label The label to filter entities by.
- * @return A list of entity IDs that have the specified label.
- */
-export async function getEntitiesByLabel(
-    connection: Connection,
-    label: string
-): Promise<HassEntity[]> {
-    try {
-        let label_result: any = await connection.sendMessagePromise({
-            type: "extract_from_target",
-            target: {
-                label_id: label
-            }
+        const connection = await createConnection({
+            auth,
+            setupRetry: 5,
         });
-        label_result.referenced_entities = label_result.referenced_entities || [];
-        // Expand ids to full entities
-        let states = await getStates(connection);
-        let result_entities = states.filter((entity: HassEntity) =>
-            label_result.referenced_entities.includes(entity.entity_id)
-        );
-        return result_entities;
+        return connection;
+    }
 
-    } catch (err: any) {
-        if (err?.code === "ERR_CONNECTION_LOST") {
-            console.error(
-                "Lost Home Assistant connection while reading states. Check URL/token/network or allow self-signed certs via HASS_ALLOW_SELF_SIGNED=1."
+    async connect(url: string, token: string): Promise<void> {
+        const connection = await this.getConnection(url, token).catch((err) => {
+            console.error("Error connecting to Home Assistant:", err);
+            throw err;
+        });
+
+        // Surface connection lifecycle in logs to debug connection drops.
+        connection.addEventListener?.("ready", () => {
+            console.log("Home Assistant connection ready.");
+        });
+        connection.addEventListener?.("disconnected", () => {
+            console.error("Home Assistant connection lost (disconnected event).");
+        });
+        connection.addEventListener?.("reconnect-error", (err: any) => {
+            console.error("Home Assistant reconnect error:", err);
+        });
+
+        this.connection = connection;
+    }
+
+    /**
+     * @param connection The Home Assistant connection.
+     * @param label The label to filter entities by.
+     * @return A list of entity IDs that have the specified label.
+     */
+    private async getEntitiesByLabel(label: string): Promise<HassEntity[]> {
+        if (!this.connection) {
+            throw new Error("Home Assistant connection is not established.");
+        }
+        try {
+            let label_result: any = await this.connection.sendMessagePromise({
+                type: "extract_from_target",
+                target: {
+                    label_id: label
+                }
+            });
+            label_result.referenced_entities = label_result.referenced_entities || [];
+            // Expand ids to full entities
+            let states = await getStates(this.connection);
+            let result_entities = states.filter((entity: HassEntity) =>
+                label_result.referenced_entities.includes(entity.entity_id)
             );
-        }
-        throw err;
-    }
-}
+            return result_entities;
 
-/**
- * Refresh the list of managed entities based on the specified label.
- * This functions is called periodically to update the list of entities in case new entities have been added with the label. (default: 60s)
- * @param ctx The Home Assistant connection.
- * @param label The label id to filter entities by.
- */
-export async function refreshLabels(ctx: ConnectionContext, label: string): Promise<void> {
-    const entities: HassEntity[] = await getEntitiesByLabel(ctx.hassConnection, label);
-
-    // Subscribe to new entities
-    for (const entity of entities) {
-        if (managedEntities.some((e) => e.id === entity.entity_id)) {
-            continue;
+        } catch (err: any) {
+            if (err?.code === "ERR_CONNECTION_LOST") {
+                console.error(
+                    "Lost Home Assistant connection while reading states. Check URL/token/network or allow self-signed certs via HASS_ALLOW_SELF_SIGNED=1."
+                );
+            }
+            throw err;
         }
-        const managedEntity = Entity.create(entity, ctx);
-        if (!managedEntity) {
-            continue;
-        }
-        managedEntities.push(managedEntity);
     }
 
-    // Update existing entities (remove if no longer exists)
-    for (const managedEntity of managedEntities) {
-        const hassEntity = entities.find((e) => e.entity_id === managedEntity.id);
-        if (!hassEntity) {
-            console.warn(`Managed entity ${managedEntity.id} no longer exists in Home Assistant, removing from managed list.`);
-            managedEntities = managedEntities.filter((e) => e.id !== managedEntity.id);
-            continue;
+    /**
+     * Refresh the list of managed entities based on the specified label.
+     * This functions is called periodically to update the list of entities in case new entities have been added with the label. (default: 60s)
+     * @param ctx The Home Assistant connection.
+     * @param label The label id to filter entities by.
+     */
+    async refreshLabels(ctx: ConnectionContext, label: string): Promise<void> {
+        const entities: HassEntity[] = await this.getEntitiesByLabel(label);
+
+        // Subscribe to new entities
+        for (const entity of entities) {
+            if (this.managedEntities.some((e) => e.id === entity.entity_id)) {
+                continue;
+            }
+            const managedEntity = Entity.create(entity, ctx);
+            if (!managedEntity) {
+                continue;
+            }
+            this.managedEntities.push(managedEntity);
         }
-        managedEntity.update(hassEntity).catch((err) => {
-            console.error(`Error updating Home Assistant entity for ${managedEntity.id}:`, err);
+
+        // Update existing entities (remove if no longer exists)
+        for (const managedEntity of this.managedEntities) {
+            const hassEntity = entities.find((e) => e.entity_id === managedEntity.id);
+            if (!hassEntity) {
+                console.warn(`Managed entity ${managedEntity.id} no longer exists in Home Assistant, removing from managed list.`);
+                this.managedEntities = this.managedEntities.filter((e) => e.id !== managedEntity.id);
+                continue;
+            }
+            managedEntity.update(hassEntity).catch((err) => {
+                console.error(`Error updating Home Assistant entity for ${managedEntity.id}:`, err);
+            });
+        }
+    }
+
+    /**
+     * Subscribe to changes in managed entities and run a callback whenever their state or attributes change.
+     * @param connection The Home Assistant connection.
+     * @param callback Function to call whenever a managed entity's state or attributes change. 
+     *                  Receives the updated entity as a parameter.
+     * @return An unsubscribe function to stop listening for changes.
+     */
+    async subscribeManagedEntityChanges(): Promise<void> {
+        if (!this.connection) {
+            throw new Error("Home Assistant connection is not established.");
+        }
+
+        if (this.unsubscribeManagedEntityChanges) {
+            console.log("Unsubscribing from previous managed entity changes");
+            this.unsubscribeManagedEntityChanges();
+        }
+        console.log("Subscribing to managed entity changes");
+
+        // Subscribe to all entity updates
+        this.unsubscribeManagedEntityChanges = subscribeEntities(this.connection, (hassEntities: HassEntities) => {
+            // Check each managed entity for changes
+            for (const managedEntity of this.managedEntities) {
+                const hassEntity = hassEntities[managedEntity.id];
+
+                if (hassEntity) {
+                    managedEntity.update(hassEntity).catch((err) => {
+                        console.error(`Error updating Home Assistant entity for ${managedEntity.id}:`, err);
+                    });
+                }
+            }
         });
     }
 }
 
-/**
- * Subscribe to changes in managed entities and run a callback whenever their state or attributes change.
- * @param connection The Home Assistant connection.
- * @param callback Function to call whenever a managed entity's state or attributes change. 
- *                  Receives the updated entity as a parameter.
- * @return An unsubscribe function to stop listening for changes.
- */
-export async function subscribeManagedEntityChanges(
-    connection: Connection
-): Promise<() => void> {
-    // Subscribe to all entity updates
-    return subscribeEntities(connection, (hassEntities: HassEntities) => {
-        // Check each managed entity for changes
-        for (const managedEntity of managedEntities) {
-            const hassEntity = hassEntities[managedEntity.id];
-
-            if (hassEntity) {
-                managedEntity.update(hassEntity).catch((err) => {
-                    console.error(`Error updating Home Assistant entity for ${managedEntity.id}:`, err);
-                });
-            }
-        }
-    });
-}
+export default new HomeAssistant();

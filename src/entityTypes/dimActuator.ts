@@ -14,6 +14,7 @@ export default class DimActuatorEntity extends Entity {
 
     async createFH(ctx: ConnectionContext): Promise<void> {
         this.fhEntity = await ctx.freeAtHome.createDimActuatorDevice(this.nativeId, this.name);
+
         this.fhEntity.on('isOnChanged', (value: boolean) => {
             console.log(`Dim light ${this.id} changed to ${value}`);
             console.time(`Update Home Assistant entity ${this.id} state`);

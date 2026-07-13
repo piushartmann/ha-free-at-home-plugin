@@ -1,6 +1,6 @@
 {
     "name": "Home Assistant Addon",
-    "version": "1.2.3",
+    "version": "1.2.13",
     "id": "de.piushartmann.homeassistant",
     "license": "GPL-3.0",
     "description": {

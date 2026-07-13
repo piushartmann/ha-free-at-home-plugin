@@ -8,6 +8,7 @@ export default class OnOffEntity extends Entity {
 
     async createFH(ctx: ConnectionContext): Promise<void> {
         this.fhEntity = await ctx.freeAtHome.createSwitchingActuatorDevice(this.nativeId, this.name);
+
         this.fhEntity.on('isOnChanged', (value: boolean) => {
             console.log(`On/Off ${this.id} changed to ${value}`);
             console.time(`Update Home Assistant entity ${this.id} state`);

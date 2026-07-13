@@ -14,6 +14,7 @@ export default class BlindActuatorEntity extends Entity {
 
     async createFH(ctx: ConnectionContext): Promise<void> {
         this.fhEntity = await ctx.freeAtHome.createBlindDevice(this.nativeId, this.name);
+        
         this.fhEntity.on('relativeValueChanged', async (value: number) => {
             console.log(`Blinds ${this.id} position changed to ${value}`);
             console.time(`Update Home Assistant entity ${this.id} position`);
