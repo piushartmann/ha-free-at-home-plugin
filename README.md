@@ -17,8 +17,6 @@ This fork updates the Free@Home blind actuator to enable bidirectional position 
 * Home Assistant → Free@Home: current cover position feedback
 * Free@Home → Home Assistant: stop command
 
-The position reported by Home Assistant is currently passed to Free@Home without additional inversion so that the displayed percentage corresponds to the Home Assistant / Apple Home representation.
-
 This has been successfully tested with VELUX roof windows and blinds connected through a VELUX KIG 300 and Home Assistant.
 
 Note: This is an experimental personal fork. The upstream project should remain the preferred source for official releases and future updates.
