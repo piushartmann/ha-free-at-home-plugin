@@ -9,59 +9,109 @@ export default class BlindActuatorEntity extends Entity {
 
     constructor(entity: HassEntity, ctx: ConnectionContext) {
         super(entity, ctx);
-        this.position = entity.attributes?.current_position as number | undefined
+        this.position =
+            entity.attributes?.current_position as number | undefined;
     }
 
-    async createFreeAtHomeEntities(ctx: ConnectionContext): Promise<void> {
-        this.fhEntity = await ctx.freeAtHome.createBlindDevice(this.nativeId, this.name);
-        
-        this.fhEntity.on('relativeValueChanged', async (value: number) => {
-            console.log(`Blinds ${this.id} position changed to ${value}`);
+    async createFreeAtHomeEntities(
+        ctx: ConnectionContext
+    ): Promise<void> {
+        this.fhEntity =
+            await ctx.freeAtHome.createBlindDevice(
+                this.nativeId,
+                this.name
+            );
 
-            const serviceData = {
-                type: "call_service",
-                domain: "cover",
-                service: "set_cover_position",
-                target: {
-                    entity_id: this.id
-                },
-                service_data: {
-                    position: 100 - value
-                }
-            };
+        this.fhEntity.on(
+            'relativeValueChanged',
+            async (value: number) => {
+                console.log(
+                    `Blinds ${this.id} position changed to ${value}`
+                );
 
-            ctx.hassConnection.sendMessagePromise(serviceData).catch((err) => {
-                console.error("Error sending blind state update for", this.id, ":", err);
-            })
-        });
+                const serviceData = {
+                    type: "call_service",
+                    domain: "cover",
+                    service: "set_cover_position",
+                    target: {
+                        entity_id: this.id
+                    },
+                    service_data: {
+                        position: 100 - value
+                    }
+                };
 
-        this.fhEntity.on('stopMovement', async () => {
-            console.log(`Blinds ${this.id} stop movement command received`);
-            console.time(`Update Home Assistant entity ${this.id} stop movement`);
-            const serviceData = {
-                type: "call_service",
-                domain: "cover",
-                service: "stop_cover",
-                target: {
-                    entity_id: this.id
-                }
-            };
+                ctx.hassConnection
+                    .sendMessagePromise(serviceData)
+                    .catch((err) => {
+                        console.error(
+                            "Error sending blind state update for",
+                            this.id,
+                            ":",
+                            err
+                        );
+                    });
+            }
+        );
 
-            ctx.hassConnection.sendMessagePromise(serviceData).catch((err) => {
-                console.warn("Error sending blind stop command for", this.id, ":", err);
-            });
-        });
+        this.fhEntity.on(
+            'stopMovement',
+            async () => {
+                console.log(
+                    `Blinds ${this.id} stop movement command received`
+                );
+
+                const serviceData = {
+                    type: "call_service",
+                    domain: "cover",
+                    service: "stop_cover",
+                    target: {
+                        entity_id: this.id
+                    }
+                };
+
+                ctx.hassConnection
+                    .sendMessagePromise(serviceData)
+                    .catch((err) => {
+                        console.warn(
+                            "Error sending blind stop command for",
+                            this.id,
+                            ":",
+                            err
+                        );
+                    });
+            }
+        );
     }
 
     stateChanged(hassEntity: HassEntity): boolean {
-        return this.state !== hassEntity.state || this.position !== hassEntity.attributes?.current_position as number | undefined;
+        return (
+            this.state !== hassEntity.state ||
+            this.position !==
+                hassEntity.attributes?.current_position as
+                    number | undefined
+        );
     }
 
-    updateFreeAtHomeEntities(hassEntity: HassEntity): void {
-            this.state = hassEntity.state;
-            this.position = hassEntity.attributes?.current_position as number | undefined;
+    updateFreeAtHomeEntities(
+        hassEntity: HassEntity
+    ): void {
+        this.state = hassEntity.state;
 
-            console.log(`Setting BlindActuatorChannel position to ${this.position}`);
-            this.fhEntity.position = this.position !== undefined ? this.position : 0;
+        this.position =
+            hassEntity.attributes?.current_position as
+                number | undefined;
+
+        if (this.position === undefined) {
+            return;
+        }
+
+        console.log(
+            `Publishing BlindActuatorChannel position ${this.position}`
+        );
+
+        this.fhEntity.delegatePositionChanged(
+            this.position
+        );
     }
 }
