@@ -1,7 +1,7 @@
 {
   "name": "ha-free-at-home-plugin",
-  "version": "1.4.1-andunkel1",
-  "description": "",
+  "version": "1.4.0-andunkel1",
+  "description": "",r
   "main": "main.js",
   "scripts": {
     "start": "node build/main.js",
