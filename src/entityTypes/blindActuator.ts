@@ -26,13 +26,7 @@ export default class BlindActuatorEntity extends Entity {
         /*
          * free@home -> Home Assistant
          *
-         * free@home BlindActuator:
-         *   0   = offen
-         *   100 = geschlossen
-         *
-         * Home Assistant cover:
-         *   0   = geschlossen
-         *   100 = offen
+         * Für die Steuerung bleibt die vorhandene Umrechnung bestehen.
          */
         this.fhEntity.on(
             "relativeValueChanged",
@@ -114,15 +108,15 @@ export default class BlindActuatorEntity extends Entity {
     /*
      * Home Assistant -> free@home
      *
-     * HA current_position:
-     *   0   = geschlossen
-     *   100 = offen
+     * Der HA-Wert wird 1:1 veröffentlicht:
      *
-     * free@home BlindActuator:
-     *   100 = geschlossen
-     *   0   = offen
+     * HA 0 %   -> free@home 0 %
+     * HA 20 %  -> free@home 20 %
+     * HA 80 %  -> free@home 80 %
+     * HA 100 % -> free@home 100 %
      *
-     * Deshalb muss auch hier die Position invertiert werden.
+     * Damit entspricht die Positionsanzeige in free@home
+     * der Anzeige in Home Assistant / Apple Home.
      */
     updateFreeAtHomeEntities(hassEntity: HassEntity): void {
         this.state = hassEntity.state;
@@ -135,10 +129,10 @@ export default class BlindActuatorEntity extends Entity {
             return;
         }
 
-        const freeAtHomePosition = 100 - this.position;
+        const freeAtHomePosition = this.position;
 
         console.log(
-            `Publishing BlindActuatorChannel position ${freeAtHomePosition} (HA: ${this.position})`
+            `Publishing BlindActuatorChannel position ${freeAtHomePosition}`
         );
 
         this.fhEntity.delegatePositionChanged(
