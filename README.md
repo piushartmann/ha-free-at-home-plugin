@@ -1,7 +1,34 @@
 Home Assistant Addon for Busch Jaeger Free@Home
 ===
 
-## I use this fork to test corrections on the status of a blind/cover sensor of my Velux roof window. It run's now!
+This is a personal fork of the Home Assistant Addon for Busch-Jaeger Free@Home.
+
+I use this fork to test and implement improvements to the `cover` integration, specifically for VELUX roof windows and blinds connected to Home Assistant.
+
+## Changes in this fork
+
+The `cover` integration has been improved to correctly report position changes from Home Assistant back to Free@Home.
+
+Previously, cover commands from Free@Home to Home Assistant worked, but position changes reported by Home Assistant were not actively published back to the Free@Home virtual blind actuator.
+
+his fork updates the Free@Home blind actuator using:
+
+```typescript
+this.fhEntity.delegatePositionChanged(freeAtHomePosition);
+
+his enables bidirectional position updates:
+
+* Free@Home → Home Assistant: cover position control
+* Home Assistant → Free@Home: current cover position feedback
+* Free@Home → Home Assistant: stop command
+
+The position reported by Home Assistant is currently passed to Free@Home without additional inversion so that the displayed percentage corresponds to the Home Assistant / Apple Home representation.
+
+This has been successfully tested with VELUX roof windows and blinds connected through a VELUX KIG 300 and Home Assistant.
+
+Note: This is an experimental personal fork. The upstream project should remain the preferred source for official releases and future updates.
+
+## About the Add-on
 
 This add-on for the Busch Jaeger SysAP integrates Home Assistant entities into the Free@Home ecosystem. So you can control your Home Assistant devices with the Free@Home smart home system and their smart light switches.
 
