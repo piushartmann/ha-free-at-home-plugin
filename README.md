@@ -11,12 +11,7 @@ The `cover` integration has been improved to correctly report position changes f
 
 Previously, cover commands from Free@Home to Home Assistant worked, but position changes reported by Home Assistant were not actively published back to the Free@Home virtual blind actuator.
 
-his fork updates the Free@Home blind actuator using:
-
-```typescript
-this.fhEntity.delegatePositionChanged(freeAtHomePosition);
-
-his enables bidirectional position updates:
+This fork updates the Free@Home blind actuator to enable bidirectional position updates:
 
 * Free@Home → Home Assistant: cover position control
 * Home Assistant → Free@Home: current cover position feedback
