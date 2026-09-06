@@ -1,6 +1,8 @@
 Home Assistant Addon for Busch Jaeger Free@Home
 ===
 
+I use this fork to test corrections on the status of a blind/cover sensor of my Velux roof window
+
 This add-on for the Busch Jaeger SysAP integrates Home Assistant entities into the Free@Home ecosystem. So you can control your Home Assistant devices with the Free@Home smart home system and their smart light switches.
 
 ## Supported Home Assistant Domains
