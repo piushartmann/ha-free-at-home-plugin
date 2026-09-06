@@ -1,7 +1,7 @@
 import Entity from "../entity.js";
 import type { ConnectionContext } from "../utils.js";
-import type { HassEntity } from 'home-assistant-js-websocket';
-import { FreeAtHomeBlindActuatorChannel } from '@busch-jaeger/free-at-home';
+import type { HassEntity } from "home-assistant-js-websocket";
+import { FreeAtHomeBlindActuatorChannel } from "@busch-jaeger/free-at-home";
 
 export default class BlindActuatorEntity extends Entity {
     declare fhEntity: FreeAtHomeBlindActuatorChannel;
@@ -9,6 +9,7 @@ export default class BlindActuatorEntity extends Entity {
 
     constructor(entity: HassEntity, ctx: ConnectionContext) {
         super(entity, ctx);
+
         this.position =
             entity.attributes?.current_position as number | undefined;
     }
@@ -22,8 +23,19 @@ export default class BlindActuatorEntity extends Entity {
                 this.name
             );
 
+        /*
+         * free@home -> Home Assistant
+         *
+         * free@home BlindActuator:
+         *   0   = offen
+         *   100 = geschlossen
+         *
+         * Home Assistant cover:
+         *   0   = geschlossen
+         *   100 = offen
+         */
         this.fhEntity.on(
-            'relativeValueChanged',
+            "relativeValueChanged",
             async (value: number) => {
                 console.log(
                     `Blinds ${this.id} position changed to ${value}`
@@ -54,8 +66,11 @@ export default class BlindActuatorEntity extends Entity {
             }
         );
 
+        /*
+         * Stop-Befehl free@home -> Home Assistant
+         */
         this.fhEntity.on(
-            'stopMovement',
+            "stopMovement",
             async () => {
                 console.log(
                     `Blinds ${this.id} stop movement command received`
@@ -84,6 +99,9 @@ export default class BlindActuatorEntity extends Entity {
         );
     }
 
+    /*
+     * Prüft sowohl den HA-State als auch die aktuelle Position.
+     */
     stateChanged(hassEntity: HassEntity): boolean {
         return (
             this.state !== hassEntity.state ||
@@ -93,9 +111,20 @@ export default class BlindActuatorEntity extends Entity {
         );
     }
 
-    updateFreeAtHomeEntities(
-        hassEntity: HassEntity
-    ): void {
+    /*
+     * Home Assistant -> free@home
+     *
+     * HA current_position:
+     *   0   = geschlossen
+     *   100 = offen
+     *
+     * free@home BlindActuator:
+     *   100 = geschlossen
+     *   0   = offen
+     *
+     * Deshalb muss auch hier die Position invertiert werden.
+     */
+    updateFreeAtHomeEntities(hassEntity: HassEntity): void {
         this.state = hassEntity.state;
 
         this.position =
@@ -106,12 +135,14 @@ export default class BlindActuatorEntity extends Entity {
             return;
         }
 
+        const freeAtHomePosition = 100 - this.position;
+
         console.log(
-            `Publishing BlindActuatorChannel position ${this.position}`
+            `Publishing BlindActuatorChannel position ${freeAtHomePosition} (HA: ${this.position})`
         );
 
         this.fhEntity.delegatePositionChanged(
-            this.position
+            freeAtHomePosition
         );
     }
 }
