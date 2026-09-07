@@ -5,7 +5,27 @@ import { FreeAtHomeBlindActuatorChannel } from "@busch-jaeger/free-at-home";
 
 export default class BlindActuatorEntity extends Entity {
     declare fhEntity: FreeAtHomeBlindActuatorChannel;
+
     position?: number;
+
+    /*
+     * Zielposition eines Befehls von free@home.
+     *
+     * Solange Home Assistant diese Position noch nicht erreicht hat,
+     * werden Zwischenpositionen nicht zurück an free@home gemeldet.
+     *
+     * Dadurch springt die Anzeige in free@home während einer Fahrt
+     * nicht kurz auf die vorherige Position zurück.
+     */
+    targetPosition?: number;
+
+    /*
+     * Manche Covers erreichen die gewünschte Position nicht exakt
+     * auf das Prozent genau.
+     *
+     * Deshalb akzeptieren wir eine kleine Toleranz.
+     */
+    readonly targetTolerance = 2;
 
     constructor(entity: HassEntity, ctx: ConnectionContext) {
         super(entity, ctx);
@@ -41,8 +61,21 @@ export default class BlindActuatorEntity extends Entity {
             async (value: number) => {
                 const homeAssistantPosition = 100 - value;
 
+                /*
+                 * Zielposition merken.
+                 *
+                 * Während Home Assistant dieses Ziel anfährt,
+                 * werden Positionsänderungen nicht wieder zurück
+                 * an free@home gespiegelt.
+                 */
+                this.targetPosition = homeAssistantPosition;
+
                 console.log(
                     `Blinds ${this.id} position changed from free@home ${value} % to Home Assistant ${homeAssistantPosition} %`
+                );
+
+                console.log(
+                    `Blinds ${this.id} waiting for Home Assistant target position ${homeAssistantPosition} %`
                 );
 
                 const serviceData = {
@@ -60,6 +93,13 @@ export default class BlindActuatorEntity extends Entity {
                 ctx.hassConnection
                     .sendMessagePromise(serviceData)
                     .catch((err) => {
+                        /*
+                         * Wenn der Home-Assistant-Befehl fehlschlägt,
+                         * darf die Rückmeldung nicht dauerhaft
+                         * blockiert bleiben.
+                         */
+                        this.targetPosition = undefined;
+
                         console.error(
                             "Error sending blind position update for",
                             this.id,
@@ -79,6 +119,15 @@ export default class BlindActuatorEntity extends Entity {
                 console.log(
                     `Blinds ${this.id} stop movement command received`
                 );
+
+                /*
+                 * Bei STOP gilt die zuvor angeforderte Zielposition
+                 * nicht mehr.
+                 *
+                 * Die nächste tatsächliche Position von HA darf daher
+                 * wieder an free@home zurückgemeldet werden.
+                 */
+                this.targetPosition = undefined;
 
                 const serviceData = {
                     type: "call_service",
@@ -138,10 +187,54 @@ export default class BlindActuatorEntity extends Entity {
             return;
         }
 
+        /*
+         * Läuft gerade ein von free@home ausgelöster Positionsbefehl?
+         */
+        if (this.targetPosition !== undefined) {
+            const difference = Math.abs(
+                this.position - this.targetPosition
+            );
+
+            /*
+             * Ziel noch nicht erreicht:
+             *
+             * Keine Zwischenposition zurück an free@home melden.
+             *
+             * Beispiel:
+             *
+             * free@home fordert 80 %
+             * -> HA-Ziel = 20 %
+             *
+             * HA meldet während der Fahrt:
+             * 0 %, 5 %, 10 %, 15 %
+             *
+             * Diese Werte werden unterdrückt.
+             */
+            if (difference > this.targetTolerance) {
+                console.log(
+                    `Blinds ${this.id} suppressing intermediate Home Assistant position ${this.position} % while waiting for target ${this.targetPosition} %`
+                );
+
+                return;
+            }
+
+            /*
+             * Ziel erreicht.
+             *
+             * Die Sperre wird aufgehoben und die tatsächlich
+             * erreichte Position wird an free@home zurückgemeldet.
+             */
+            console.log(
+                `Blinds ${this.id} reached target position: Home Assistant ${this.position} % (target ${this.targetPosition} %)`
+            );
+
+            this.targetPosition = undefined;
+        }
+
         const freeAtHomePosition = 100 - this.position;
 
         console.log(
-            `Publishing BlindActuatorChannel position: Home Assistant ${this.position} % -> free@home ${freeAtHomePosition} %`
+            `Publishing BlindActuatorChannel ${this.id} position: Home Assistant ${this.position} % -> free@home ${freeAtHomePosition} %`
         );
 
         this.fhEntity.delegatePositionChanged(
