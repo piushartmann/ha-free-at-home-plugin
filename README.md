@@ -14,7 +14,7 @@ Home Assistant and Free@Home use opposite position semantics for covers:
 * Home Assistant: 0 % = closed, 100 % = open
 * Free@Home: 0 % = open / up, 100 % = closed / down
 
-Therefore, cover positions are now inverted in both directions:
+Therefore, cover positions are inverted in both directions:
 
 * Free@Home → Home Assistant: HA position = 100 - Free@Home position
 * Home Assistant → Free@Home: Free@Home position = 100 - HA position
