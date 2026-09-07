@@ -7,17 +7,33 @@ I use this fork to test and implement improvements to the `cover` integration, s
 
 ## Changes in this fork
 
-The `cover` integration has been improved to correctly report position changes from Home Assistant back to Free@Home.
+The cover integration has been adjusted to correctly translate cover positions between Home Assistant and Free@Home.
 
-Previously, cover commands from Free@Home to Home Assistant worked, but position changes reported by Home Assistant were not actively published back to the Free@Home virtual blind actuator.
+Home Assistant and Free@Home use opposite position semantics for covers:
 
-This fork updates the Free@Home blind actuator to enable bidirectional position updates:
+* Home Assistant: 0 % = closed, 100 % = open
+* Free@Home: 0 % = open / up, 100 % = closed / down
+
+Therefore, cover positions are now inverted in both directions:
+
+* Free@Home → Home Assistant: HA position = 100 - Free@Home position
+* Home Assistant → Free@Home: Free@Home position = 100 - HA position
+
+Examples:
+
+* 0 % ↔ 100 %
+* 20 % ↔ 80 %
+* 50 % ↔ 50 %
+
+The integration also supports:
 
 * Free@Home → Home Assistant: cover position control
 * Home Assistant → Free@Home: current cover position feedback
 * Free@Home → Home Assistant: stop command
 
-This has been successfully tested with VELUX roof windows and blinds connected through a VELUX KIG 300 and Home Assistant.
+This behavior has been successfully tested with VELUX roof windows and VELUX blinds connected through a VELUX KIG 300 and Home Assistant and weinor shades connected through weinor BiConnect via Matter.
+
+Version 1.4.0-andunkel1 is based on upstream version 1.4.0.
 
 Note: This is an experimental personal fork. The upstream project should remain the preferred source for official releases and future updates.
 
@@ -36,7 +52,7 @@ This add-on for the Busch Jaeger SysAP integrates Home Assistant entities into t
 - automation (triggers `automation.trigger`)
 - binary_sensor
 - sensor (temperature only)
-- cover (not fully tested yet)
+- cover (bidirectional position control tested with VELUX roof windows and blinds as well as Weinor shades)
 
 ### Buttons, Scenes, Scripts & Automations
 
