@@ -7,7 +7,7 @@ I use this fork to test and implement improvements to the `cover` integration, s
 
 ## Changes in this fork
 
-The cover integration has been adjusted to correctly translate cover positions between Home Assistant and Free@Home.
+The cover integration has been adjusted to correctly translate cover positions between Home Assistant and Free@Home and to provide stable position feedback while covers are moving.
 
 Home Assistant and Free@Home use opposite position semantics for covers:
 
@@ -30,10 +30,22 @@ The integration also supports:
 * Free@Home → Home Assistant: cover position control
 * Home Assistant → Free@Home: current cover position feedback
 * Free@Home → Home Assistant: stop command
+* Suppression of intermediate position feedback while a Free@Home position command is being executed
 
-This behavior has been successfully tested with VELUX roof windows and VELUX blinds connected through a VELUX KIG 300 and Home Assistant and weinor shades connected through weinor BiConnect via Matter.
+When a position is requested from Free@Home, the integration waits until Home Assistant reaches the requested target position before reporting the position back to Free@Home. Intermediate or stale Home Assistant position values are suppressed during movement. This prevents the displayed position in Free@Home from temporarily jumping back to the previous position while the cover is moving.
 
-Version 1.4.0-andunkel1 is based on upstream version 1.4.0.
+A tolerance of ±2 percentage points is used to determine when the requested target has been reached. Once the target is reached within this tolerance, the actual position reported by Home Assistant is translated and published back to Free@Home.
+
+For example:
+
+* Free@Home requests 80 %
+* Home Assistant target position = 20 %
+* Intermediate Home Assistant positions are not reported back to Free@Home
+* When Home Assistant reaches 20 % (±2 %), the actual reached position is translated and reported back to Free@Home
+
+This behavior has been successfully tested with VELUX roof windows and VELUX blinds connected through a VELUX KIG 300 and Home Assistant, as well as Weinor shades connected through Weinor BiConnect via Matter.
+
+Version 1.4.1 is based on upstream version 1.4.0 and includes the bidirectional cover position translation and improved position feedback handling described above.
 
 Note: This is an experimental personal fork. The upstream project should remain the preferred source for official releases and future updates.
 
