@@ -1,56 +1,6 @@
 Home Assistant Addon for Busch Jaeger Free@Home
 ===
 
-This is a personal fork of the Home Assistant Addon for Busch-Jaeger Free@Home.
-
-I use this fork to test and implement improvements to the `cover` integration, specifically for VELUX roof windows and blinds connected to Home Assistant.
-
-## Changes in this fork
-
-The cover integration has been adjusted to correctly translate cover positions between Home Assistant and Free@Home and to provide stable position feedback while covers are moving.
-
-Home Assistant and Free@Home use opposite position semantics for covers:
-
-* Home Assistant: 0 % = closed, 100 % = open
-* Free@Home: 0 % = open / up, 100 % = closed / down
-
-Therefore, cover positions are inverted in both directions:
-
-* Free@Home → Home Assistant: HA position = 100 - Free@Home position
-* Home Assistant → Free@Home: Free@Home position = 100 - HA position
-
-Examples:
-
-* 0 % ↔ 100 %
-* 20 % ↔ 80 %
-* 50 % ↔ 50 %
-
-The integration also supports:
-
-* Free@Home → Home Assistant: cover position control
-* Home Assistant → Free@Home: current cover position feedback
-* Free@Home → Home Assistant: stop command
-* Suppression of intermediate position feedback while a Free@Home position command is being executed
-
-When a position is requested from Free@Home, the integration waits until Home Assistant reaches the requested target position before reporting the position back to Free@Home. Intermediate or stale Home Assistant position values are suppressed during movement. This prevents the displayed position in Free@Home from temporarily jumping back to the previous position while the cover is moving.
-
-A tolerance of ±2 percentage points is used to determine when the requested target has been reached. Once the target is reached within this tolerance, the actual position reported by Home Assistant is translated and published back to Free@Home.
-
-For example:
-
-* Free@Home requests 80 %
-* Home Assistant target position = 20 %
-* Intermediate Home Assistant positions are not reported back to Free@Home
-* When Home Assistant reaches 20 % (±2 %), the actual reached position is translated and reported back to Free@Home
-
-This behavior has been successfully tested with VELUX roof windows and VELUX blinds connected through a VELUX KIG 300 and Home Assistant, as well as Weinor shades connected through Weinor BiConnect via Matter.
-
-Version 1.4.1 is based on upstream version 1.4.0 and includes the bidirectional cover position translation and improved position feedback handling described above.
-
-Note: This is an experimental personal fork. The upstream project should remain the preferred source for official releases and future updates.
-
-## About the Add-on
-
 This add-on for the Busch Jaeger SysAP integrates Home Assistant entities into the Free@Home ecosystem. So you can control your Home Assistant devices with the Free@Home smart home system and their smart light switches.
 
 ## Supported Home Assistant Domains
@@ -64,7 +14,7 @@ This add-on for the Busch Jaeger SysAP integrates Home Assistant entities into t
 - automation (triggers `automation.trigger`)
 - binary_sensor
 - sensor (temperature only)
-- cover (bidirectional position control tested with VELUX roof windows and blinds as well as Weinor shades)
+- cover (not fully tested yet)
 
 ### Buttons, Scenes, Scripts & Automations
 
