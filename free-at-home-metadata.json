@@ -1,6 +1,6 @@
 {
     "name": "Home Assistant Addon",
-    "version": "1.4.1",
+    "version": "1.4.2",
     "id": "de.piushartmann.homeassistant",
     "license": "GPL-3.0",
     "description": {
@@ -84,6 +84,15 @@
                     "required": true,
                     "description": "Interval in seconds to refresh the device list from Home Assistant. This controls how often new devices with the label are added to Free@Home.",
                     "description@de": "Intervall in Sekunden, um die Geräteliste von Home Assistant zu aktualisieren. Dies steuert, wie oft neue Geräte mit dem Label zu Free@Home hinzugefügt werden."
+                },
+                "lookForUpdates": {
+                    "name": "Look for updates",
+                    "name@de": "Nach Updates suchen",
+                    "type": "boolean",
+                    "default": true,
+                    "required": true,
+                    "description": "Look for updates on Github and presents the option to update to the newest Version",
+                    "description@de": "Sucht nach Updates auf Github and zeigt eine Update schaltfläche an"
                 },
                 "updateRefreshInterval": {
                     "name": "Update Refresh Interval (in seconds)",

@@ -59,6 +59,7 @@ export interface Configuration extends AddOn.Configuration {
         items: {
             label: string;
             labelRefreshInterval: number;
+            lookForUpdates: boolean;
             updateRefreshInterval: number
         }
     };

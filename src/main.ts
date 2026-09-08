@@ -26,6 +26,15 @@ const connectionContext: ConnectionContext = {
     hassConnection: undefined as unknown as Connection
 };
 
+interface Settings {
+    hassURL: string,
+    hassToken: string,
+    label: string,
+    labelRefreshInterval: number,
+    lookForUpdates: boolean,
+    updateRefreshInterval: number
+}
+
 async function getHassConnection(hassURL: string, hassToken: string) {
     if (await homeassistant.testCredentials(hassURL, hassToken)) {
         console.log("Home Assistant credentials set successfully.");
@@ -35,27 +44,26 @@ async function getHassConnection(hassURL: string, hassToken: string) {
     throw Error('Home Assistant credentials invalid')
 }
 
-async function main(hassURL: string, hassToken: string, label: string = "bush_jaeger", labelRefreshInterval: number = 60, updateRefreshInterval: number = 86400) {
+async function main(settings: Settings) {
 
     console.log("Starting main() with parameters:", {
-        hassURL,
-        hassToken: hassToken ? "****" : "",
-        label,
-        labelRefreshInterval
+        settings
     });
 
-    const updateDelay = Math.min(
-        Math.max(updateRefreshInterval, MIN_UPDATE_INTERVAL_SECONDS) * 1000,
-        MAX_TIMER_DELAY_MS
-    );
-    updateInterval = new Interval(async () => {
-        updateAddon(addOn).catch((error) => {
-            console.error("Error during update:", error);
-        });
-    }, updateDelay)
+    if (settings.lookForUpdates) {
+        const updateDelay = Math.min(
+            Math.max(settings.updateRefreshInterval, MIN_UPDATE_INTERVAL_SECONDS) * 1000,
+            MAX_TIMER_DELAY_MS
+        );
+        updateInterval = new Interval(async () => {
+            updateAddon(addOn).catch((error) => {
+                console.error("Error during update:", error);
+            });
+        }, updateDelay)
+    }
 
     try {
-        connectionContext.hassConnection = await getHassConnection(hassURL, hassToken)
+        connectionContext.hassConnection = await getHassConnection(settings.hassURL, settings.hassToken)
     }
     catch (err) {
         console.error("Error connecting to Home Assistant:", err);
@@ -64,10 +72,10 @@ async function main(hassURL: string, hassToken: string, label: string = "bush_ja
     }
 
     refreshInterval = new Interval(async () => {
-        await homeassistant.refreshLabels(connectionContext, label).catch((error) => {
+        await homeassistant.refreshLabels(connectionContext, settings.label).catch((error) => {
             console.error("Error refreshing labels:", error);
         });
-    }, labelRefreshInterval * 1000)
+    }, settings.labelRefreshInterval * 1000)
 
     await homeassistant.subscribeManagedEntityChanges();
 }
@@ -83,11 +91,14 @@ process.on('uncaughtException', (err) => {
 
 // Listen for configuration changes
 addOn.on("configurationChanged", async (configuration: Configuration) => {
-    const hassUrl = configuration.authentication?.items?.["hassUrl"].trim() as string || "";
-    const hassToken = configuration.authentication?.items?.["hassToken"].trim() as string || "";
-    const label = configuration.general?.items?.["label"].trim() as string || "virtual_bush_jaeger";
-    const labelRefreshInterval = configuration.general?.items?.["labelRefreshInterval"] as number || 60;
-    const updateRefreshInterval = configuration.general?.items?.["updateRefreshInterval"] as number || 86400;
+    const settings: Settings = {
+        hassURL: configuration.authentication?.items?.["hassUrl"]?.trim() || "",
+        hassToken: configuration.authentication?.items?.["hassToken"]?.trim() || "",
+        label: configuration.general?.items?.["label"]?.trim() || "busch_jaeger",
+        labelRefreshInterval: configuration.general?.items?.["labelRefreshInterval"] as number || 60,
+        lookForUpdates: configuration.general?.items?.["lookForUpdates"] as boolean || false,
+        updateRefreshInterval: configuration.general?.items?.["updateRefreshInterval"] as number || 86400
+    };
     console.log("Configuration changed, updating main()");
 
     refreshInterval?.clear()
@@ -98,7 +109,7 @@ addOn.on("configurationChanged", async (configuration: Configuration) => {
     });
     connectionContext.hassConnection = undefined as unknown as Connection
 
-    main(hassUrl, hassToken, label, labelRefreshInterval, updateRefreshInterval).catch((error) => {
+    main(settings).catch((error) => {
         console.error("Error in main():", error);
     });
 });
