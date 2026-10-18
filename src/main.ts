@@ -47,7 +47,7 @@ async function getHassConnection(hassURL: string, hassToken: string) {
 async function main(settings: Settings) {
 
     console.log("Starting main() with parameters:", {
-        settings
+        settings: { ...settings, hassToken: settings.hassToken ? "***" : "" }
     });
 
     if (settings.lookForUpdates) {

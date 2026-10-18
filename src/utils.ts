@@ -1,13 +1,18 @@
 import { FreeAtHome } from '@busch-jaeger/free-at-home';
 import { Notification } from '@busch-jaeger/free-at-home/lib/fhapi';
 import { AddOn } from '@busch-jaeger/free-at-home';
-import { Connection } from 'home-assistant-js-websocket';
+import { Connection, HassEntity } from 'home-assistant-js-websocket';
 
 import { freeAtHome } from './main.js';
 
 export interface ConnectionContext {
     freeAtHome: FreeAtHome;
     hassConnection: Connection;
+    /**
+     * Resolves the power sensor belonging to the same Home Assistant device as the given entity,
+     * which is used to report the consumption of a smart plug.
+     */
+    powerSensorFor?: (entityId: string) => HassEntity | undefined;
 }
 
 export async function postNotification(

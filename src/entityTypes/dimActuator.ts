@@ -9,7 +9,7 @@ export default class DimActuatorEntity extends Entity {
 
     constructor(entity: HassEntity, ctx: ConnectionContext) {
         super(entity, ctx);
-        this.brightness = entity.attributes?.brightness as number | undefined
+        this.brightness = (entity.attributes?.brightness ?? undefined) as number | undefined;
     }
 
     async createFreeAtHomeEntities(ctx: ConnectionContext): Promise<void> {
@@ -64,12 +64,12 @@ export default class DimActuatorEntity extends Entity {
     }
 
     stateChanged(hassEntity: HassEntity): boolean {
-        return this.state !== hassEntity.state || this.brightness !== hassEntity.attributes?.brightness as number | undefined;
+        return this.state !== hassEntity.state || this.brightness !== (hassEntity.attributes?.brightness ?? undefined) as number | undefined;
     }
 
     updateFreeAtHomeEntities(hassEntity: HassEntity): void {
             this.state = hassEntity.state;
-            this.brightness = hassEntity.attributes?.brightness as number | undefined;
+            this.brightness = (hassEntity.attributes?.brightness ?? undefined) as number | undefined;
 
             this.fhEntity.setOnOff(this.state === 'on');
             if (this.brightness !== undefined) {
