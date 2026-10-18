@@ -18,6 +18,8 @@ class HomeAssistant {
     connection: Connection = undefined as unknown as Connection;
     private managedEntities: Entity[] = [];
     private entityChangeCleanupHandler: (() => void) | undefined = undefined;
+    private deviceIdByEntityId = new Map<string, string>();
+    private allStates: HassEntity[] = [];
 
     async testCredentials(url: string, token: string): Promise<boolean> {
         try {
@@ -90,6 +92,7 @@ class HomeAssistant {
             label_result.referenced_entities = label_result.referenced_entities || [];
             // Expand ids to full entities
             let states = await getStates(this.connection);
+            this.allStates = states;
             let result_entities = states.filter((entity: HassEntity) =>
                 label_result.referenced_entities.includes(entity.entity_id)
             );
@@ -106,6 +109,42 @@ class HomeAssistant {
     }
 
     /**
+     * Reads the entity registry to learn which Home Assistant device each entity belongs to.
+     * Failures are tolerated, the device lookup is then simply empty.
+     */
+    private async refreshEntityRegistry(): Promise<void> {
+        try {
+            const registry: any[] = await this.connection.sendMessagePromise({
+                type: "config/entity_registry/list"
+            });
+            this.deviceIdByEntityId = new Map(
+                registry
+                    .filter((entry) => entry?.entity_id && entry?.device_id)
+                    .map((entry) => [entry.entity_id as string, entry.device_id as string])
+            );
+        } catch (err) {
+            console.error("Error reading Home Assistant entity registry:", err);
+        }
+    }
+
+    /**
+     * Finds the power sensor that belongs to the same Home Assistant device as the given entity.
+     * @param entityId The entity whose device is searched for a power sensor.
+     * @returns The power sensor entity, or undefined if the device has none.
+     */
+    private findPowerSensor(entityId: string): HassEntity | undefined {
+        const deviceId = this.deviceIdByEntityId.get(entityId);
+        if (!deviceId) {
+            return undefined;
+        }
+        return this.allStates.find((entity) =>
+            entity.entity_id.startsWith("sensor.")
+            && entity.attributes?.device_class === "power"
+            && this.deviceIdByEntityId.get(entity.entity_id) === deviceId
+        );
+    }
+
+    /**
      * Refresh the list of managed entities based on the specified label.
      * This functions is called periodically to update the list of entities in case new entities have been added with the label. (default: 60s)
      * @param ctx The Home Assistant connection.
@@ -113,6 +152,8 @@ class HomeAssistant {
      */
     async refreshLabels(ctx: ConnectionContext, label: string): Promise<void> {
         const entities: HassEntity[] = await this.getEntitiesByLabel(label);
+        await this.refreshEntityRegistry();
+        ctx.powerSensorFor = (entityId: string) => this.findPowerSensor(entityId);
 
         // Subscribe to new entities
         for (const entity of entities) {
@@ -164,6 +205,13 @@ class HomeAssistant {
 
                 if (hassEntity) {
                     managedEntity.update(hassEntity);
+                }
+
+                for (const relatedId of managedEntity.relatedIds()) {
+                    const relatedEntity = hassEntities[relatedId];
+                    if (relatedEntity) {
+                        managedEntity.updateRelated(relatedEntity);
+                    }
                 }
             }
         });
